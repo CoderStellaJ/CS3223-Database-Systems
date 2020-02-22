@@ -2,13 +2,13 @@
 
 ### Running the program
 1. configuration for RandomDB
-![RandomDB configuration](./imgs/randomDb.png)
+![RandomDB configuration](./imgs/randomdb.png)
 set program arguments to `DBname numrecords`
 
 2. run RandomDB and generate `.md .stat .txt` files
 
 3. configure ConvertTxtToTbl 
-![RandomDB configuration](./imgs/randomDb.png)
+![RandomDB configuration](./imgs/convertTxtToTbl.png)
 set program arguments to `DBname`
 
 4. run ConvertTxtToTbl and generate `.tbl` file
