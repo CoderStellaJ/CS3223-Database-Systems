@@ -169,6 +169,9 @@ public class RandomInitialPlan {
             /** randomly select a join type**/
             int numJMeth = JoinType.numJoinTypes();
             int joinMeth = RandNumb.randInt(0, numJMeth - 1);
+            //debugging, choose the type you implemented
+            // joinMeth = 1;
+            System.out.println("selected join type is: " + joinMeth);
             jn.setJoinType(joinMeth);
             modifyHashtable(left, jn);
             modifyHashtable(right, jn);

@@ -18,3 +18,12 @@ set program arguments to `DBname`
 set program arguments to `queryfilename resultfile pagesize numbuffer`
 
 6. run QueryMain and generate output file
+
+### Adding new join algorithm
+1. `PlanCost.java` add cost to your join algorithm
+2. Add java file of your algorithm into operators folder. Please refer to `Join.java` and extends this class.
+3. Modify `JoinType.java`, add 1 to `numJoinTypes()` 
+4. `RandomInitialPlan.java createJoinOp()` generates a random number to select which join algorithm to use. 
+You can change `joinMeth` to the type you implemented for debugging
+
+Note: we specified our file path in `RandomDB.java`. Please change it when you pull from github.

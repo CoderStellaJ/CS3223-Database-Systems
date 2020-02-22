@@ -9,6 +9,7 @@ public class RandomDB {
     static boolean[] pk;
     static HashMap<Integer, HashSet<Integer>> fk = new HashMap<>();
     private static Random random;
+    private static String dir = "C:\\Repository\\CS3223-Database-Systems\\testcases\\";
 
     public RandomDB() {
         random = new Random(System.currentTimeMillis());
@@ -23,7 +24,7 @@ public class RandomDB {
             System.exit(1);
         }
         String tblname = args[0];
-        String srcfile = args[0] + ".det";
+        String srcfile = dir + args[0] + ".det";
         String metafile = args[0] + ".md";
         String datafile = args[0] + ".txt";
         String statfile = args[0] + ".stat";
