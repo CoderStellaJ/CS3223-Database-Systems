@@ -9,7 +9,7 @@ public class RandomDB {
     static boolean[] pk;
     static HashMap<Integer, HashSet<Integer>> fk = new HashMap<>();
     private static Random random;
-    private static String dir = "C:\\Repository\\CS3223-Database-Systems\\testcases\\";
+    private static String propPath = "./src/resources/common.properties";
 
     public RandomDB() {
         random = new Random(System.currentTimeMillis());
@@ -19,6 +19,7 @@ public class RandomDB {
 
         RandomDB rdb = new RandomDB();
 
+        String dir = getDBPath();
         if (args.length != 2) {
             System.out.println("Usage: java RandomDB <dbname> <numrecords> ");
             System.exit(1);
@@ -155,7 +156,7 @@ public class RandomDB {
                     outstat.print(numtuple + "\t");
                 } else if (datatype[i].equals("INTEGER")) {
                     if (keytype[i].equals("PK")) {
-                        int numdist = rdb.getnumdistinct(pk);
+                        int numdist = rdb.getNumDistinct(pk);
                         outstat.print(numdist + "\t");
                     } else if (keytype[i].equals("FK")) {
                         int numdist = fk.get(i).size();
@@ -186,12 +187,24 @@ public class RandomDB {
         return s;
     }
 
-    public int getnumdistinct(boolean[] key) {
+    public int getNumDistinct(boolean[] key) {
         int length = key.length;
         int count = 0;
         for (int i = 0; i < length; ++i) {
             if (key[i] == true) count++;
         }
         return count;
+    }
+
+    public static String getDBPath() {
+        try (InputStream input = new FileInputStream(propPath)) {
+            Properties prop = new Properties();
+            prop.load(input);
+
+            return prop.getProperty("db.path");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return "";
     }
 }
