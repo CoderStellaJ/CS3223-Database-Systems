@@ -19,7 +19,6 @@ public class BlockNestedJoin extends Join{
 
     private static int filenum = 0;         // To get unique filenum for this operation
 
-    private int batchsize;                  // Number of tuples per out batch
     private ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     private ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
     private String rfname;                  // The file name where the right table is materialized
@@ -53,13 +52,6 @@ public class BlockNestedJoin extends Join{
         initializeCursors();
         leftblock = new ArrayList<Batch>();
         return materializeTable();
-    }
-
-    public void setSize() {
-        /** select number of tuples per batch **/
-        int tuplesize = schema.getTupleSize();
-        // number of tuples in a page
-        batchsize = Batch.getPageSize() / tuplesize;
     }
 
     public void setAttributeIndex() {

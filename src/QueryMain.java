@@ -50,6 +50,10 @@ public class QueryMain {
                 e.printStackTrace();
             }
         } else pagesize = Integer.parseInt(args[2]);
+        if (pagesize < 1) {
+            System.out.println("Minimum 1 page size is required");
+            System.exit(1);
+        }
         return pagesize;
     }
 
@@ -98,6 +102,10 @@ public class QueryMain {
                     e.printStackTrace();
                 }
             } else numBuff = Integer.parseInt(args[3]);
+            if (numBuff < 1) {
+                System.out.println("Minimum 1 buffer is required");
+                System.exit(1);
+            }
             BufferManager bm = new BufferManager(numBuff, numJoin);
         }
 

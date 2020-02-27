@@ -15,7 +15,6 @@ public class Project extends Operator {
 
     Operator base;                 // Base table to project
     ArrayList<Attribute> attrset;  // Set of attributes to project
-    int batchsize;                 // Number of tuples per outbatch
 
     /**
      * The following fields are requied during execution
@@ -55,9 +54,7 @@ public class Project extends Operator {
      * * projected from the base operator
      **/
     public boolean open() {
-        /** set number of tuples per batch **/
-        int tuplesize = schema.getTupleSize();
-        batchsize = Batch.getPageSize() / tuplesize;
+        setSize();
 
         if (!base.open()) return false;
 
