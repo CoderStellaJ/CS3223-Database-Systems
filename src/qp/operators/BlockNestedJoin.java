@@ -137,7 +137,7 @@ public class BlockNestedJoin extends Join{
             // load in pages of right table one by one
             while (eosr == false) {
                 try {
-                    if (rcurs == 0 && lcurs == 0) {
+                    if (lpage == 0 && rcurs == 0 && lcurs == 0) {
                         rightbatch = (Batch) in.readObject();
                     }
 
