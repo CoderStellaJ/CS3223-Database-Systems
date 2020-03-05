@@ -17,7 +17,7 @@ import qp.utils.Tuple;
 
 public class BlockNestedJoin extends Join{
 
-    private static int filenum = 0;         // To get unique filenum for this operation
+    private static int filenum = 1;         // To get unique filenum for this operation
 
     private ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     private ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
@@ -223,7 +223,7 @@ public class BlockNestedJoin extends Join{
             in = new ObjectInputStream(new FileInputStream(rfname));
             eosr = false;
         } catch (IOException io) {
-            System.err.println("NestedJoin:error in reading the file");
+            System.err.println("BlockNestedJoin:error in reading the file");
             System.exit(1);
         }
     }
