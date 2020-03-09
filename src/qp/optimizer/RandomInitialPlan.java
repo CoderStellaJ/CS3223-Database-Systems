@@ -46,7 +46,7 @@ public class RandomInitialPlan {
     /**
      * prepare initial plan for the query
      **/
-    public Operator prepareInitialPlan() {
+    public Operator prepareInitialPlan(int numBuffer) {
 
         if (sqlquery.getGroupByList().size() > 0) {
             System.err.println("GroupBy is not implemented.");
@@ -65,7 +65,9 @@ public class RandomInitialPlan {
             createJoinOp();
         }
         createProjectOp();
-
+        if (sqlquery.isDistinct()) {
+            createDistinctOp(numBuffer);
+        }
         return root;
     }
 
@@ -121,11 +123,7 @@ public class RandomInitialPlan {
             if (cn.getOpType() == Condition.SELECT) {
                 String tabname = cn.getLhs().getTabName();
                 Operator tempop = (Operator) tab_op_hash.get(tabname);
-                if (sqlquery.isDistinct()) {
-                    op1 = new Distinct(tempop, cn, OpType.SELECT, true);
-                } else {
-                    op1 = new Select(tempop, cn, OpType.SELECT);
-                }
+                op1 = new Select(tempop, cn, OpType.SELECT);
                 /** set the schema same as base relation **/
                 op1.setSchema(tempop.getSchema());
                 modifyHashtable(tempop, op1);
@@ -193,6 +191,16 @@ public class RandomInitialPlan {
             Schema newSchema = base.getSchema().subSchema(projectlist);
             root.setSchema(newSchema);
         }
+    }
+
+    public void createDistinctOp(int numBuffer) {
+        Operator base = root;
+        Schema schema = base.getSchema();
+        root = new SortedRun(base, numBuffer);
+        root.setSchema(schema);
+        base = root;
+        root = new Distinct(base, OpType.DISTINCT);
+        root.setSchema(schema);
     }
 
     private void modifyHashtable(Operator old, Operator newop) {

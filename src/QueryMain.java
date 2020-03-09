@@ -30,7 +30,7 @@ public class QueryMain {
         SQLQuery sqlquery = getSQLQuery(args[0]);
         configureBufferManager(sqlquery.getNumJoin(), args, in);
 
-        Operator root = getQueryPlan(sqlquery);
+        Operator root = getQueryPlan(sqlquery, Integer.parseInt(args[3]));
         printFinalPlan(root, args, in);
         executeQuery(root, args[1]);
     }
@@ -120,11 +120,11 @@ public class QueryMain {
     /**
      * Run optimiser and get the final query plan as an Operator
      **/
-    public static Operator getQueryPlan(SQLQuery sqlquery) {
+    public static Operator getQueryPlan(SQLQuery sqlquery, int numBuffer) {
         Operator root = null;
 
         RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
-        Operator planroot = optimizer.getOptimizedPlan();
+        Operator planroot = optimizer.getOptimizedPlan(numBuffer);
 
         if (planroot == null) {
             System.out.println("DPOptimizer: query plan is null");
