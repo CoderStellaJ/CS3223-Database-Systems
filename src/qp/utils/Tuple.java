@@ -121,4 +121,23 @@ public class Tuple implements Serializable {
         }
         return 0;
     }
+
+    @Override
+    public boolean equals(Object others) {
+        if (others == this) {
+            return true;
+        }
+        if (!(others instanceof Tuple)) {
+            return false;
+        }
+        Tuple t = (Tuple) others;
+        if (this._data == null && t.data() == null) {
+            return true;
+        }
+        if (this._data == null || t.data() == null) {
+            return false;
+        }
+        return this._data.equals(t.data());
+    }
+
 }

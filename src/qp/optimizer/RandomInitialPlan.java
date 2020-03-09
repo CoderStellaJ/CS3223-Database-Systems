@@ -48,11 +48,6 @@ public class RandomInitialPlan {
      **/
     public Operator prepareInitialPlan() {
 
-        if (sqlquery.isDistinct()) {
-            System.err.println("Distinct is not implemented.");
-            System.exit(1);
-        }
-
         if (sqlquery.getGroupByList().size() > 0) {
             System.err.println("GroupBy is not implemented.");
             System.exit(1);
@@ -126,7 +121,11 @@ public class RandomInitialPlan {
             if (cn.getOpType() == Condition.SELECT) {
                 String tabname = cn.getLhs().getTabName();
                 Operator tempop = (Operator) tab_op_hash.get(tabname);
-                op1 = new Select(tempop, cn, OpType.SELECT);
+                if (sqlquery.isDistinct()) {
+                    op1 = new Distinct(tempop, cn, OpType.SELECT, true);
+                } else {
+                    op1 = new Select(tempop, cn, OpType.SELECT);
+                }
                 /** set the schema same as base relation **/
                 op1.setSchema(tempop.getSchema());
                 modifyHashtable(tempop, op1);
