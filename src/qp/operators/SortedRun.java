@@ -23,8 +23,8 @@ public class SortedRun extends Operator {
     /**
      * constructor
      **/
-    public SortedRun(Operator base, int type, int numBuffer) {
-        super(type);
+    public SortedRun(Operator base, int numBuffer) {
+        super(OpType.SORT);
         this.base = base;
         this.numBuffer = numBuffer;
     }

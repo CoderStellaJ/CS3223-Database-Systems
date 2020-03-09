@@ -15,7 +15,6 @@ import java.util.ArrayList;
 public class NestedJoin extends Join {
 
     static int filenum = 0;         // To get unique filenum for this operation
-    int batchsize;                  // Number of tuples per out batch
     ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
     String rfname;                  // The file name where the right table is materialized
@@ -42,9 +41,7 @@ public class NestedJoin extends Join {
      * * Opens the connections
      **/
     public boolean open() {
-        /** select number of tuples per batch **/
-        int tuplesize = schema.getTupleSize();
-        batchsize = Batch.getPageSize() / tuplesize;
+        setSize();
 
         /** find indices attributes of join conditions **/
         leftindex = new ArrayList<>();

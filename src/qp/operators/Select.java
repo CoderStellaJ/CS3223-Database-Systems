@@ -10,7 +10,6 @@ public class Select extends Operator {
 
     Operator base;  // Base operator
     Condition con;  // Select condition
-    int batchsize;  // Number of tuples per outbatch
 
     /**
      * The following fields are required during
@@ -53,9 +52,7 @@ public class Select extends Operator {
         eos = false;  // Since the stream is just opened
         start = 0;    // Set the cursor to starting position in input buffer
 
-        /** Set number of tuples per page**/
-        int tuplesize = schema.getTupleSize();
-        batchsize = Batch.getPageSize() / tuplesize;
+        setSize();
 
         if (base.open())
             return true;

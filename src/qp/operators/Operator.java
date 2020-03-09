@@ -10,6 +10,7 @@ public class Operator {
 
     int optype;     // Whether it is OpType.SELECT/ Optype.PROJECT/OpType.JOIN
     Schema schema;  // Schema of the result at this operator
+    protected int batchsize;                  // Number of tuples per out batch
 
     public Operator(int type) {
         this.optype = type;
@@ -49,6 +50,19 @@ public class Operator {
 
     public Object clone() {
         return new Operator(optype);
+    }
+
+    public void setSize() {
+        /** select number of tuples per batch **/
+        int tuplesize = schema.getTupleSize();
+        // number of tuples in a page
+        batchsize = Batch.getPageSize() / tuplesize;
+        if (batchsize <= 0) {
+            System.out.println(
+                    String.format("The buffer size %d is not enough for tuples of size %d",
+                            Batch.getPageSize(), tuplesize));
+            System.exit(1);
+        }
     }
 
 }

@@ -20,7 +20,6 @@ public class Scan extends Operator {
 
     String filename;       // Corresponding file name
     String tabname;        // Table name
-    int batchsize;         // Number of tuples per out batch;
     ObjectInputStream in;  // Input file being scanned
     boolean eos;           // To indicate whether end of stream reached or not
 
@@ -41,9 +40,7 @@ public class Scan extends Operator {
      * Open file prepare a stream pointer to read input file
      */
     public boolean open() {
-        /** num of tuples per batch**/
-        int tuplesize = schema.getTupleSize();
-        batchsize = Batch.getPageSize() / tuplesize;
+        setSize();
         eos = false;
         try {
             in = new ObjectInputStream(new FileInputStream(filename));

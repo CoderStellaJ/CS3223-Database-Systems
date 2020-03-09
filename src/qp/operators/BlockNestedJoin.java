@@ -17,9 +17,8 @@ import qp.utils.Tuple;
 
 public class BlockNestedJoin extends Join{
 
-    private static int filenum = 0;         // To get unique filenum for this operation
+    private static int filenum = 1;         // To get unique filenum for this operation
 
-    private int batchsize;                  // Number of tuples per out batch
     private ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
     private ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
     private String rfname;                  // The file name where the right table is materialized
@@ -53,13 +52,6 @@ public class BlockNestedJoin extends Join{
         initializeCursors();
         leftblock = new ArrayList<Batch>();
         return materializeTable();
-    }
-
-    public void setSize() {
-        /** select number of tuples per batch **/
-        int tuplesize = schema.getTupleSize();
-        // number of tuples in a page
-        batchsize = Batch.getPageSize() / tuplesize;
     }
 
     public void setAttributeIndex() {
@@ -145,7 +137,7 @@ public class BlockNestedJoin extends Join{
             // load in pages of right table one by one
             while (eosr == false) {
                 try {
-                    if (rcurs == 0 && lcurs == 0) {
+                    if (lpage == 0 && rcurs == 0 && lcurs == 0) {
                         rightbatch = (Batch) in.readObject();
                     }
 
@@ -231,7 +223,7 @@ public class BlockNestedJoin extends Join{
             in = new ObjectInputStream(new FileInputStream(rfname));
             eosr = false;
         } catch (IOException io) {
-            System.err.println("NestedJoin:error in reading the file");
+            System.err.println("BlockNestedJoin:error in reading the file");
             System.exit(1);
         }
     }
