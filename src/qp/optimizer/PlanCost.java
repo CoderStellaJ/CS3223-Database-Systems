@@ -201,7 +201,7 @@ public class PlanCost {
             Attribute attri = schema.getAttribute(i);
             long oldvalue = ht.get(attri);
             long newvalue = (long) Math.ceil(((double) outtuples / (double) intuples) * oldvalue);
-            ht.put(attri, outtuples);
+            ht.put(attri, newvalue);
         }
         return outtuples;
     }
