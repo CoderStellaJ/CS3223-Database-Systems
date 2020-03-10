@@ -66,7 +66,8 @@ public class RandomInitialPlan {
         }
         createProjectOp();
         if (sqlquery.isDistinct()) {
-            createDistinctOp(numBuffer);
+            createSortRunOp(numBuffer);
+            createDistinctOp();
         }
         return root;
     }
@@ -193,12 +194,16 @@ public class RandomInitialPlan {
         }
     }
 
-    public void createDistinctOp(int numBuffer) {
+    public void createSortRunOp(int numBuffer) {
         Operator base = root;
         Schema schema = base.getSchema();
         root = new SortedRun(base, numBuffer);
         root.setSchema(schema);
-        base = root;
+    }
+
+    public void createDistinctOp() {
+        Operator base = root;
+        Schema schema = base.getSchema();
         root = new Distinct(base, OpType.DISTINCT);
         root.setSchema(schema);
     }
