@@ -1,23 +1,47 @@
 package qp.operators;
 
 import qp.utils.Batch;
-import qp.utils.Condition;
 import qp.utils.Tuple;
 
-public class Distinct extends Select {
+public class Distinct extends Operator {
 
+    Operator base;
     public Tuple prev = null;
-    public boolean needCondition;
+
+    boolean eos;     // Indicate whether end of stream is reached or not
+    Batch inbatch;   // This is the current input buffer
+    Batch outbatch;  // This is the current output buffer
+    int start;       // Cursor position in the input buffer
     /**
      * constructor
      *
      * @param base
-     * @param con
      * @param type
      */
-    public Distinct(Operator base, Condition con, int type, boolean needCondition) {
-        super(base, con, type);
-        this.needCondition = needCondition;
+    public Distinct(Operator base, int type) {
+        super(type);
+        this.base = base;
+    }
+
+    public Operator getBase() {
+        return base;
+    }
+
+    public void setBase(Operator base) {
+        this.base = base;
+    }
+
+    @Override
+    public boolean open() {
+        eos = false;  // Since the stream is just opened
+        start = 0;    // Set the cursor to starting position in input buffer
+
+        setSize();
+
+        if (base.open())
+            return true;
+        else
+            return false;
     }
 
     @Override
@@ -49,7 +73,7 @@ public class Distinct extends Select {
                 /**
                  *  Only checkCondition if it is required so as conditions might be checked during previous pass
                  */
-                if (!isDuplicate(present) && (!this.needCondition || checkCondition(present))) {
+                if (!isDuplicate(present)) {
                     outbatch.add(present);
                 }
             }
@@ -63,6 +87,11 @@ public class Distinct extends Select {
                 start = i;
         }
         return outbatch;
+    }
+
+    public boolean close() {
+        base.close();    // Added base.close
+        return true;
     }
 
     public boolean isDuplicate(Tuple curr) {
