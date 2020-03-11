@@ -108,6 +108,7 @@ public class SortedRun extends Operator {
                     outbatch = new Batch(batchsize);
                 }
             }
+            run.add(outbatch);
             runs.add(run);
         }
 
