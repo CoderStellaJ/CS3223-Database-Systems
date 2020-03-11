@@ -1,6 +1,7 @@
 package qp.operators;
 
 import qp.utils.Batch;
+import qp.utils.Schema;
 import qp.utils.Tuple;
 
 public class Distinct extends Operator {
@@ -92,6 +93,14 @@ public class Distinct extends Operator {
     public boolean close() {
         base.close();    // Added base.close
         return true;
+    }
+
+    @Override
+    public Operator clone() {
+        Operator newBase = (Operator) base.clone();
+        Distinct newDistinct = new Distinct(newBase, this.getOpType());
+        newDistinct.setSchema((Schema) newBase.getSchema().clone());
+        return newDistinct;
     }
 
     public boolean isDuplicate(Tuple curr) {

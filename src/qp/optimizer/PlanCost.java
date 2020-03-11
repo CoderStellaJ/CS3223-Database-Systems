@@ -21,6 +21,7 @@ public class PlanCost {
 
     long cost;
     long numtuple;
+    int numBuffer;
 
     /**
      * If buffers are not enough for a selected join
@@ -77,7 +78,9 @@ public class PlanCost {
         } else if (node.getOpType() == OpType.SCAN) {
             return getStatistics((Scan) node);
         } else if (node.getOpType() == OpType.DISTINCT) {
-            return 1;
+            return getStatistics((Distinct) node);
+        } else if (node.getOpType() == OpType.SORT) {
+            return getStatistics((SortedRun) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
@@ -272,6 +275,33 @@ public class PlanCost {
             System.exit(1);
         }
         return numtuples;
+    }
+
+    protected long getStatistics(Distinct node) {
+        // TODO: Of course, not all tuples are distinct, need to reduce cost
+        long intuples = calculateCost(node.getBase());
+        Schema schema = node.getSchema();
+        long capacity = (long) Math.floor(Batch.getPageSize() / schema.getTupleSize());
+        long numPages = (long) Math.ceil(intuples / capacity);
+        cost += numPages * 2;
+        return intuples;
+    }
+
+    protected long getStatistics(SortedRun node) {
+        int numBuff = BufferManager.numBuffer;
+        long intuples = calculateCost(node.getBase());
+        if (!isFeasible) {
+            System.out.println("notFeasible");
+            return Long.MAX_VALUE;
+        }
+        Schema schema = node.getSchema();
+        long capacity = (long) Math.floor(Batch.getPageSize() / schema.getTupleSize());
+        long numPages = (long) Math.ceil(intuples / capacity);
+        long temp = numBuff >= numPages ? 1 :(long) Math.log(Math.ceil(numPages / numBuff));
+        long sortCost = (long) (2 * numPages * (1 + Math.ceil(temp) / Math.log(numBuff - 1)));
+
+        cost += sortCost;
+        return intuples;
     }
 
 }

@@ -1,6 +1,7 @@
 package qp.operators;
 
 import qp.utils.Batch;
+import qp.utils.Schema;
 import qp.utils.Tuple;
 import qp.utils.TupleComparator;
 
@@ -83,6 +84,14 @@ public class SortedRun extends Operator {
         return true;
     }
 
+    @Override
+    public Operator clone() {
+        Operator newBase = (Operator) base.clone();
+        SortedRun newSR = new SortedRun(newBase, numBuffer);
+        newSR.setSchema((Schema) newBase.getSchema().clone());
+        return newSR;
+    }
+
     public List createSortedRuns() {
         List<LinkedList<Batch>> runs = new ArrayList<>();
 
@@ -118,7 +127,7 @@ public class SortedRun extends Operator {
     public List mergeSortedRuns(List<LinkedList<Batch>> runs) {
         List<LinkedList<Batch>> newRuns = new ArrayList<>();
         int left = 0;
-        int right = Math.min(numBuffer - 1, runs.size() - 1);
+        int right = Math.min(numBuffer - 2, runs.size() - 1);
         while (left < runs.size()) {
             LinkedList<Batch> run = mergeToOneRun(runs, left, right);
             newRuns.add(run);
