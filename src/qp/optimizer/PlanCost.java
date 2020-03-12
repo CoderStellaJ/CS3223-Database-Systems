@@ -277,12 +277,12 @@ public class PlanCost {
 
     protected long getStatistics(Distinct node) {
         long intuples = calculateCost(node.getBase());
-        long numberDistinct = 0;
-        for (Attribute attr : ht.keySet()) {
-            numberDistinct = Math.max(numberDistinct, ht.get(attr));
+        long numberDistinct = 1;
+        Schema schema = node.getSchema();
+        for (Attribute attr : schema.getAttList()) {
+            numberDistinct *= Math.max(numberDistinct, ht.get(attr));
         }
         numberDistinct = Math.min(numberDistinct, intuples);
-        Schema schema = node.getSchema();
         long capacity = (long) Math.floor(Batch.getPageSize() / schema.getTupleSize());
         long numPages = (long) Math.ceil(numberDistinct / capacity);
         cost += numPages * 2;
