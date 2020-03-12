@@ -21,7 +21,6 @@ public class PlanCost {
 
     long cost;
     long numtuple;
-    int numBuffer;
 
     /**
      * If buffers are not enough for a selected join
@@ -158,7 +157,6 @@ public class PlanCost {
                 return 0;
         }
         cost = cost + joincost;
-
         return outtuples;
     }
 
@@ -278,13 +276,17 @@ public class PlanCost {
     }
 
     protected long getStatistics(Distinct node) {
-        // TODO: Of course, not all tuples are distinct, need to reduce cost
         long intuples = calculateCost(node.getBase());
+        long numberDistinct = 0;
+        for (Attribute attr : ht.keySet()) {
+            numberDistinct = Math.max(numberDistinct, ht.get(attr));
+        }
+        numberDistinct = Math.min(numberDistinct, intuples);
         Schema schema = node.getSchema();
         long capacity = (long) Math.floor(Batch.getPageSize() / schema.getTupleSize());
-        long numPages = (long) Math.ceil(intuples / capacity);
+        long numPages = (long) Math.ceil(numberDistinct / capacity);
         cost += numPages * 2;
-        return intuples;
+        return numberDistinct;
     }
 
     protected long getStatistics(SortedRun node) {
