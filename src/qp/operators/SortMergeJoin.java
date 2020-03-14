@@ -4,10 +4,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import qp.utils.Attribute;
-import qp.utils.Batch;
-import qp.utils.Condition;
-import qp.utils.Tuple;
+import qp.utils.*;
 import qp.operators.SortedRun;
 
 public class SortMergeJoin extends Join{
@@ -23,16 +20,23 @@ public class SortMergeJoin extends Join{
     private Batch rightbatch;               // Buffer page for right input stream
     private ObjectInputStream leftin;       // File pointer to the left hand materialized file
     private ObjectInputStream rightin;      // File pointer to the right hand materialized file
+    private ObjectInputStream prerightin;   // File pointer to the left hand materialized file for backtracking
+    private Tuple prevlefttuple;            // The previous accessed left tuple for backtracking
 
     private int lcurs;                      // Cursor for left side sorted run
     private int rcurs;                      // Cursor for right side sorted run
+    boolean eosl;                           // Whether end of stream (left table) is reached
+    boolean eosr;                           // Whether end of stream (right table) is reached
 
-    private boolean eof;                    // Whether end of stream (either left or right table) is reached
+    TupleComparator comparator;             // To compare between left and right tuples by their join index
+    TupleComparator leftcomparator;         // To compare between left tuples by its join index
 
     public SortMergeJoin(Join jn) {
         super(new SortedRun(jn.getLeft(), jn.getNumBuff()), new SortedRun(jn.getRight(), jn.getNumBuff()),
                 jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
+        left.setSchema(jn.getLeft().getSchema());
+        right.setSchema(jn.getRight().getSchema());
         jointype = jn.getJoinType();
         numBuff = jn.getNumBuff();
     }
@@ -45,8 +49,14 @@ public class SortMergeJoin extends Join{
     public boolean open() {
         setSize();
         setAttributeIndex();
+        setComparator();
         initializeCursors();
         return materializeTable();
+    }
+
+    private void setComparator() {
+        comparator = new TupleComparator(leftindex, rightindex);
+        leftcomparator = new TupleComparator(leftindex, leftindex);
     }
 
     public void setAttributeIndex() {
@@ -65,32 +75,35 @@ public class SortMergeJoin extends Join{
         /** initialize the cursors of input buffers **/
         lcurs = 0;
         rcurs = 0;
-        eof = false;
+        eosl = false;
+        eosr = false;
     }
 
     public boolean materializeTable() {
 
-        /** Right hand side table is to be materialized
-         ** for the Nested join to perform
-         **/
-        if (!left.open() || !right.open()) {
+        // Set comparator so that the table is sorted by specified indices
+        SortedRun leftSorted = (SortedRun) this.left;
+        SortedRun rightSorted = (SortedRun) this.right;
+        leftSorted.setComparator(new TupleComparator(leftindex, leftindex));
+        rightSorted.setComparator(new TupleComparator(rightindex, rightindex));
+        leftSorted.numBuffer = numBuff;
+        rightSorted.numBuffer = numBuff;
+
+        if (!leftSorted.open() || !rightSorted.open()) {
             return false;
         } else {
-            /** If the right operator is not a base table then
-             ** Materialize the intermediate result from right
-             ** into a file
-             **/
+
             filenum++;
             lfname = "lBNJtemp-" + String.valueOf(filenum);
             rfname = "rBNJtemp-" + String.valueOf(filenum);
             try {
-                writeToFile(lfname, left);
-                writeToFile(rfname, right);
+                writeToFile(lfname, leftSorted);
+                writeToFile(rfname, rightSorted);
             } catch (IOException io) {
                 System.out.println("SortMergeJoin: Error writing to temporary file");
                 return false;
             }
-            if (!left.close() || !right.close())
+            if (!leftSorted.close() || !rightSorted.close())
                 return false;
             else
                 StartScanTable();
@@ -113,38 +126,76 @@ public class SortMergeJoin extends Join{
      **/
     public Batch next() {
         // reaches the end of the left file
-        if (eof) {
+        if (eosl || eosr) {
             return null;
         }
         outbatch = new Batch(batchsize);
+
         // enter while loop when output buffer is not full
         while (!outbatch.isFull()) {
-            // right buffer reaches end, load another block of left buffers
-            if (eof) {
-                return outbatch;
-            }
-
-            // load in pages of right table one by one
-            while (eof == false) {
-                try {
-                    leftbatch = (Batch) leftin.readObject();
-                    rightbatch = (Batch) rightin.readObject();
-                    // Todo: perform join on two sorted files
-                } catch (EOFException e) {
+            try {
+                // load in new pages from tables
+                if (!eosl && (leftbatch == null || lcurs >= leftbatch.size())) {
                     try {
+                        leftbatch = (Batch) leftin.readObject();
+                    } catch (EOFException e) {
+                        eosl = true;
                         leftin.close();
-                        rightin.close();
-                    } catch (IOException io) {
-                        System.out.println("SortMergeJoin: Error in reading temporary file");
                     }
-                    eof = true;
-                } catch (ClassNotFoundException c) {
-                    System.out.println("SortMergeJoin: Error in deserialising temporary file ");
-                    System.exit(1);
-                } catch (IOException io) {
-                    System.out.println("SortMergeJoin: Error in reading temporary file");
-                    System.exit(1);
+                    lcurs = 0;
                 }
+                if (!eosr && (rightbatch == null || rcurs >= rightbatch.size())) {
+                    try {
+                        rightbatch = (Batch) rightin.readObject();
+                    } catch (EOFException e) {
+                        rightin.close();
+                        eosr = true;
+                    }
+                    rcurs = 0;
+                }
+
+                if (eosl || eosr) {
+                    return outbatch;
+                }
+
+                while (lcurs < leftbatch.size() && rcurs < rightbatch.size()) {
+                    Tuple lefttuple = leftbatch.get(lcurs);
+                    Tuple righttuple = rightbatch.get(rcurs);
+                    if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
+                        Tuple outtuple = lefttuple.joinWith(righttuple);
+                        outbatch.add(outtuple);
+                        rcurs += 1;
+
+                        if (outbatch.isFull()) {
+                            return outbatch;
+                        }
+                    } else if (comparator.compare(lefttuple, righttuple) < 0) {
+                        // lefttuple < righttuple
+
+                        // Check for backtracking
+//                        if (lcurs + 1 < leftbatch.size()) {
+//                            Tuple nextlefttuple = leftbatch.get(lcurs + 1);
+//                            if (leftcomparator.compare(nextlefttuple, lefttuple) == 0) {
+//                                rightin = (ObjectInputStream) DeepCopy.copy(prerightin);
+//                            }
+//                        } else {
+//                            prevlefttuple = lefttuple;
+//                        }
+
+                        lcurs += 1;
+                    } else {
+                        // lefttuple > righttuple
+                        rcurs += 1;
+                    }
+                }
+
+
+            } catch (ClassNotFoundException c) {
+                System.out.println("SortMergeJoin: Error in deserialising temporary file ");
+                System.exit(1);
+            } catch (IOException io) {
+                System.out.println("SortMergeJoin: Error in reading temporary file");
+                System.exit(1);
             }
         }
         return outbatch;
@@ -155,6 +206,7 @@ public class SortMergeJoin extends Join{
         try {
             leftin = new ObjectInputStream(new FileInputStream(lfname));
             rightin = new ObjectInputStream(new FileInputStream(rfname));
+//            prerightin = (ObjectInputStream) DeepCopy.copy(rightin);
         } catch (IOException io) {
             System.err.println("SortMergeJoin: error in reading the file");
             System.exit(1);
