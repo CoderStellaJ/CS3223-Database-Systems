@@ -280,7 +280,7 @@ public class PlanCost {
         long numberDistinct = 1;
         Schema schema = node.getSchema();
         for (Attribute attr : schema.getAttList()) {
-            numberDistinct *= Math.max(numberDistinct, ht.get(attr));
+            numberDistinct *= ht.get(attr);
         }
         numberDistinct = Math.min(numberDistinct, intuples);
         long capacity = (long) Math.floor(Batch.getPageSize() / schema.getTupleSize());
