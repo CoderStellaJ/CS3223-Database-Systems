@@ -46,7 +46,7 @@ public class RandomInitialPlan {
     /**
      * prepare initial plan for the query
      **/
-    public Operator prepareInitialPlan(int numBuffer) {
+    public Operator prepareInitialPlan() {
 
         if (sqlquery.getGroupByList().size() > 0) {
             System.err.println("GroupBy is not implemented.");
@@ -66,7 +66,7 @@ public class RandomInitialPlan {
         }
         createProjectOp();
         if (sqlquery.isDistinct()) {
-            createSortRunOp(numBuffer);
+            createSortRunOp();
             createDistinctOp();
         }
         return root;
@@ -194,10 +194,10 @@ public class RandomInitialPlan {
         }
     }
 
-    public void createSortRunOp(int numBuffer) {
+    public void createSortRunOp() {
         Operator base = root;
         Schema schema = base.getSchema();
-        root = new SortedRun(base, numBuffer);
+        root = new SortedRun(base, BufferManager.numBuffer);
         root.setSchema(schema);
     }
 

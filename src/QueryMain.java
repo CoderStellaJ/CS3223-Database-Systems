@@ -7,11 +7,14 @@ import qp.operators.Operator;
 import qp.optimizer.BufferManager;
 import qp.optimizer.PlanCost;
 import qp.optimizer.RandomOptimizer;
-import qp.parser.Scaner;
-import qp.parser.parser;
+import qp.optimizer.SetOperationMergePlan;
+import qp.parser.*;
 import qp.utils.*;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class QueryMain {
 
@@ -27,10 +30,16 @@ public class QueryMain {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         Batch.setPageSize(getPageSize(args, in));
 
-        SQLQuery sqlquery = getSQLQuery(args[0]);
-        configureBufferManager(sqlquery.getNumJoin(), args, in);
+        List<ProcessedQuery> sqlQueries = getSQLQueries(args[0]);
 
-        Operator root = getQueryPlan(sqlquery, Integer.parseInt(args[3]));
+        List<Operator> operations = new ArrayList<>();
+        for (ProcessedQuery processedQuery: sqlQueries) {
+            configureBufferManager(processedQuery.getQuery().getNumJoin(), args, in);
+            Operator operation = getQueryPlan(processedQuery.getQuery());
+            operations.add(operation);
+        }
+
+        Operator root = mergeSetOperations(operations, sqlQueries);
         printFinalPlan(root, args, in);
         executeQuery(root, args[1]);
     }
@@ -60,30 +69,61 @@ public class QueryMain {
     /**
      * Parse query from query file
      **/
-    public static SQLQuery getSQLQuery(String queryfile) {
+    public static List<ProcessedQuery> getSQLQueries(String queryfile) {
         /** Read query file **/
         FileInputStream source = null;
+        String query = "";
         try {
             source = new FileInputStream(queryfile);
+
+            StringBuilder sb = new StringBuilder();
+            int i = 0;
+            do {
+                byte[] buffer = new byte[1024];
+                i = source.read(buffer);
+                String value = new String(buffer, StandardCharsets.UTF_8);
+                sb.append(value);
+            } while (i != -1);
+
+            query = sb.toString();
+
         } catch (FileNotFoundException ff) {
             System.out.println("File not found: " + queryfile);
             System.exit(1);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        /** Scan the query **/
-        Scaner sc = new Scaner(source);
-        parser p = new parser();
-        p.setScanner(sc);
+        QuerySplitter qs = new QuerySplitter(query);
+        qs.splitQueries();
+        List<UnprocessedQuery> unprocessedQueryList = qs.getQueries();
+        List<ProcessedQuery> processedQueryList = new ArrayList<>();
+        String tempFile = "";
 
-        /** Parse the query **/
-        try {
-            p.parse();
-        } catch (Exception e) {
-            System.out.println("Exception occured while parsing");
-            System.exit(1);
+        for (UnprocessedQuery unprocessedQuery: unprocessedQueryList) {
+            try {
+                tempFile = "temp.sql";
+                BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+                writer.write(unprocessedQuery.getValue().trim());
+                writer.close();
+                FileInputStream in = new FileInputStream(tempFile);
+
+                Scaner sc = new Scaner(in);
+                parser p = new parser();
+                p.setScanner(sc);
+                p.parse();
+                ProcessedQuery processedQuery = new ProcessedQuery(p.getSQLQuery(), unprocessedQuery.getSetOperation());
+                processedQueryList.add(processedQuery);
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-
-        return p.getSQLQuery();
+        File file = new File(tempFile);
+        file.delete();
+        return processedQueryList;
     }
 
     /**
@@ -120,11 +160,11 @@ public class QueryMain {
     /**
      * Run optimiser and get the final query plan as an Operator
      **/
-    public static Operator getQueryPlan(SQLQuery sqlquery, int numBuffer) {
+    public static Operator getQueryPlan(SQLQuery sqlquery) {
         Operator root = null;
 
         RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
-        Operator planroot = optimizer.getOptimizedPlan(numBuffer);
+        Operator planroot = optimizer.getOptimizedPlan();
 
         if (planroot == null) {
             System.out.println("DPOptimizer: query plan is null");
@@ -134,6 +174,11 @@ public class QueryMain {
         root = RandomOptimizer.makeExecPlan(planroot);
 
         return root;
+    }
+
+    private static Operator mergeSetOperations(List<Operator> operations, List<ProcessedQuery> queries) {
+        SetOperationMergePlan mergePlan = new SetOperationMergePlan(operations, queries);
+        return mergePlan.mergeSetOperations();
     }
 
     /**

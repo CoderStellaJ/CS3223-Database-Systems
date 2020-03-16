@@ -115,9 +115,9 @@ public class RandomOptimizer {
     }
 
     /**
-     * Implementation of Iterative Improvement Algorithm for Randomized optimization of Query Plan
+     * Implementation of Iterative Improvement Algorithm for Randomized optimization of UnprocessedQuery Plan
      **/
-    public Operator getOptimizedPlan(int numBuffer) {
+    public Operator getOptimizedPlan() {
         /** get an initial plan for the given sql query **/
         RandomInitialPlan rip = new RandomInitialPlan(sqlquery);
         numJoin = rip.getNumJoins();
@@ -137,7 +137,7 @@ public class RandomOptimizer {
          *  has satisfied
          **/
         for (int j = 0; j < NUMITER; ++j) {
-            Operator initPlan = rip.prepareInitialPlan(numBuffer);
+            Operator initPlan = rip.prepareInitialPlan();
             modifySchema(initPlan);
             System.out.println("-----------initial Plan-------------");
             Debug.PPrint(initPlan);
