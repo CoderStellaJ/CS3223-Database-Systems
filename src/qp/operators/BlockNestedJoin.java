@@ -34,6 +34,8 @@ public class BlockNestedJoin extends Join{
     private boolean eosl;                   // Whether end of stream (left table) is reached
     private boolean eosr;                   // Whether end of stream (right table) is reached
 
+    private Join jn;                        // For clone func only
+
     public BlockNestedJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
@@ -235,6 +237,13 @@ public class BlockNestedJoin extends Join{
         File f = new File(rfname);
         f.delete();
         return true;
+    }
+
+    public Object clone() {
+        Join newjn = (Join) jn.clone();
+        BlockNestedJoin newbnj = new BlockNestedJoin(newjn);
+        newbnj.setNumBuff(numBuff);
+        return newbnj;
     }
 
 }
