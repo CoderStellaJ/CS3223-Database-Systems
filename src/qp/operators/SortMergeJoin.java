@@ -177,9 +177,6 @@ public class SortMergeJoin extends Join{
                     while (lcurs < leftbatch.size() && rcurs < rightbatch.size()) {
                         Tuple lefttuple = leftbatch.get(lcurs);
                         Tuple righttuple = rightbatch.get(rcurs);
-                        if ((Integer)lefttuple.dataAt(0) == 2){
-                            int a = 0;
-                        }
                         if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
                             backtrackbuffer.add(righttuple);
                             Tuple outtuple = lefttuple.joinWith(righttuple);
@@ -216,10 +213,14 @@ public class SortMergeJoin extends Join{
     }
 
     private void joinBacktrackBuffer() {
+
         // Exit the function when
         // 1. the outbatch is full
         // 2. lefttuple is different from the previous one, no more backtracking is needed
         // 3. leftbatch reaches to the end, need to fetch new batch from left table
+
+        ifBacktracking = true;
+
         while (lcurs < leftbatch.size()) {
             Tuple lefttuple = leftbatch.get(lcurs);
             if (prevlefttuple != null && leftcomparator.compare(lefttuple, prevlefttuple) != 0) {
@@ -230,7 +231,6 @@ public class SortMergeJoin extends Join{
                 return;
 
             } else {
-                ifBacktracking = true;
 
                 if (backtrackcurs == backtrackbuffer.size()) {
                     // Restart cursor
@@ -259,7 +259,6 @@ public class SortMergeJoin extends Join{
 
         }
 
-        ifBacktracking = true;
     }
 
 
