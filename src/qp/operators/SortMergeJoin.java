@@ -31,8 +31,6 @@ public class SortMergeJoin extends Join{
     TupleComparator comparator;             // To compare between left and right tuples by their join index
     TupleComparator leftcomparator;         // To compare between left tuples by its join index
 
-    private Join jn;                        // For clone func only
-
     public SortMergeJoin(Join jn) {
         super(new SortedRun(jn.getLeft(), jn.getNumBuff()), new SortedRun(jn.getRight(), jn.getNumBuff()),
                 jn.getConditionList(), jn.getOpType());
@@ -281,13 +279,6 @@ public class SortMergeJoin extends Join{
         File rf = new File(rfname);
         rf.delete();
         return true;
-    }
-
-    public Object clone() {
-        Join newjn = (Join) jn.clone();
-        SortMergeJoin newsmj = new SortMergeJoin(newjn);
-        newsmj.setNumBuff(numBuff);
-        return newsmj;
     }
 
 }
