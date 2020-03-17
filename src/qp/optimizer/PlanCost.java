@@ -80,6 +80,8 @@ public class PlanCost {
             return getStatistics((Distinct) node);
         } else if (node.getOpType() == OpType.SORT) {
             return getStatistics((SortedRun) node);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return getStatistics((Orderby) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
@@ -151,6 +153,9 @@ public class PlanCost {
                 break;
             case JoinType.BLOCKNESTED:
                 joincost = (long) Math.ceil(leftpages*1.0/blockSize) * rightpages;
+                break;
+            case JoinType.SORTMERGE:
+                joincost = leftpages + rightpages;
                 break;
             default:
                 System.out.println("join type is not supported");
@@ -303,6 +308,15 @@ public class PlanCost {
         long sortCost = (long) (2 * numPages * (1 + Math.ceil(temp) / Math.log(numBuff - 1)));
 
         cost += sortCost;
+        return intuples;
+    }
+
+    protected long getStatistics(Orderby node) {
+        long intuples = calculateCost(node.getBase());
+        if (!isFeasible) {
+            System.out.println("notFeasible");
+            return Long.MAX_VALUE;
+        }
         return intuples;
     }
 

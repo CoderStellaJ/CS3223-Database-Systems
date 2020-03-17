@@ -63,8 +63,6 @@ public class RandomOptimizer {
                     return bnj;
                 case JoinType.SORTMERGE:
                     SortMergeJoin smj = new SortMergeJoin((Join) node);
-                    smj.setLeft(left);
-                    smj.setRight(right);
                     smj.setNumBuff(numbuff);
                     return smj;
                 default:
@@ -85,6 +83,10 @@ public class RandomOptimizer {
         } else if (node.getOpType() == OpType.SORT) {
             Operator base = makeExecPlan(((SortedRun) node).getBase());
             ((SortedRun) node).setBase(base);
+            return node;
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            Operator base = makeExecPlan(((Orderby) node).getBase());
+            ((Orderby) node).setBase(base);
             return node;
         } else {
             return node;
@@ -386,6 +388,8 @@ public class RandomOptimizer {
             return findNodeAt(((SortedRun) node).getBase(), joinNum);
         } else if (node.getOpType() == OpType.DISTINCT) {
             return findNodeAt(((Distinct) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return findNodeAt(((Orderby) node).getBase(), joinNum);
         } else {
             return null;
         }
@@ -395,6 +399,7 @@ public class RandomOptimizer {
      * Modifies the schema of operators which are modified due to selecing an alternative neighbor plan
      **/
     private void modifySchema(Operator node) {
+        // Todo: add other operators
         if (node.getOpType() == OpType.JOIN) {
             Operator left = ((Join) node).getLeft();
             Operator right = ((Join) node).getRight();

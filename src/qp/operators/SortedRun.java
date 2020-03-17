@@ -19,6 +19,7 @@ public class SortedRun extends Operator {
     Batch inbatch;   // This is the current input buffer
     Batch outbatch;  // This is the current output buffer
     int start;       // Cursor position in the input buffer
+    TupleComparator comparator;
     List<LinkedList<Batch>> runs;
 
     /**
@@ -28,6 +29,7 @@ public class SortedRun extends Operator {
         super(OpType.SORT);
         this.base = base;
         this.numBuffer = numBuffer;
+        this.comparator = new TupleComparator();
     }
 
     public Operator getBase() {
@@ -36,6 +38,10 @@ public class SortedRun extends Operator {
 
     public void setBase(Operator base) {
         this.base = base;
+    }
+
+    public void setComparator(TupleComparator comparator) {
+        this.comparator = comparator;
     }
 
     /**
@@ -95,8 +101,7 @@ public class SortedRun extends Operator {
     public List createSortedRuns() {
         List<LinkedList<Batch>> runs = new ArrayList<>();
 
-        // TODO: currently only compare tuple by their first attribue
-        PriorityQueue<Tuple> pq = new PriorityQueue<>(new TupleComparator());
+        PriorityQueue<Tuple> pq = new PriorityQueue<>(comparator);
         while (!eos) {
             for (int i = 0; i < numBuffer; i++) {
                 inbatch = base.next();
