@@ -1,8 +1,7 @@
 package qp.optimizer;
 
-import qp.operators.Operator;
+import qp.operators.*;
 import qp.parser.ProcessedQuery;
-
 import java.util.List;
 
 public class SetOperationMergePlan {
@@ -30,7 +29,8 @@ public class SetOperationMergePlan {
                     createIntersectionOp(root, operators.get(i + 1));
                     break;
                 default:
-                    System.out.println("Invalid Set Operation Type");
+                    System.err.println("Invalid Set Operation Type");
+                    System.exit(1);
             }
         }
 
@@ -42,7 +42,12 @@ public class SetOperationMergePlan {
     }
 
     private void createIntersectionOp(Operator leftOp, Operator rightOp) {
-
+        SortedRun leftRun = new SortedRun(leftOp, BufferManager.numBuffer);
+        leftRun.setSchema(leftOp.getSchema());
+        SortedRun rightRun = new SortedRun(rightOp, BufferManager.numBuffer);
+        rightRun.setSchema(rightOp.getSchema());
+        Intersect intersect = new Intersect(leftRun, rightRun, OpType.JOIN);
+        root = intersect;
     }
 
 }
