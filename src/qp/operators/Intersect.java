@@ -16,6 +16,7 @@ public class Intersect extends Join {
     Batch rightbatch;               // Buffer page for right input stream
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
+    ArrayList<Integer> tupleAttributeIndexes;
 
     public Intersect(Operator left, Operator right, int type) {
         super(left, right, type);
@@ -39,6 +40,10 @@ public class Intersect extends Join {
         this.setConditionList(conditionList);
         schema = leftSchema;
         jointype = JoinType.INTERSECT;
+        this.tupleAttributeIndexes = new ArrayList<>();
+        for (int i = 0; i < leftAttrList.size(); i++) {
+            this.tupleAttributeIndexes.add(i);
+        }
     }
 
     @Override
@@ -96,7 +101,7 @@ public class Intersect extends Join {
                     outbatch.add(leftTuple);
                     lcurs++;
                     rcurs++;
-                } else if (Tuple.compareTuples(leftTuple, rightTuple, 0, 0) < 0) {
+                } else if (Tuple.compareTuples(leftTuple, rightTuple, tupleAttributeIndexes, tupleAttributeIndexes) < 0) {
                     lcurs++;
                 } else {
                     rcurs++;

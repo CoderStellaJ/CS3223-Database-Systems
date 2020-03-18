@@ -66,7 +66,7 @@ public class RandomInitialPlan {
         }
 
         if (sqlquery.getOrderByList().size() > 0) {
-            createOrderbyOp(numBuffer);
+            createOrderbyOp(BufferManager.numBuffer);
         }
 
         return root;
