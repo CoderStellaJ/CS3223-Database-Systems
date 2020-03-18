@@ -53,11 +53,6 @@ public class RandomInitialPlan {
             System.exit(1);
         }
 
-        if (sqlquery.getOrderByList().size() > 0) {
-            System.err.println("Orderby is not implemented.");
-            System.exit(1);
-        }
-
         tab_op_hash = new HashMap<>();
         createScanOp();
         createSelectOp();
@@ -69,6 +64,11 @@ public class RandomInitialPlan {
             createSortRunOp();
             createDistinctOp();
         }
+
+        if (sqlquery.getOrderByList().size() > 0) {
+            createOrderbyOp(numBuffer);
+        }
+
         return root;
     }
 
@@ -205,6 +205,13 @@ public class RandomInitialPlan {
         Operator base = root;
         Schema schema = base.getSchema();
         root = new Distinct(base, OpType.DISTINCT);
+        root.setSchema(schema);
+    }
+
+    public void createOrderbyOp(int numBuffer) {
+        Operator base = root;
+        Schema schema = base.getSchema();
+        root = new Orderby(base, sqlquery.getOrderByList(), numBuffer);
         root.setSchema(schema);
     }
 
