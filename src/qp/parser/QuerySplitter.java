@@ -16,7 +16,7 @@ public class QuerySplitter {
     }
 
     public void splitQueries() {
-        String[] queryStrings = originalQuery.split("INTERSECTION|UNION");
+        String[] queryStrings = originalQuery.split("INTERSECT|UNION");
         PriorityQueue<Operation> pq = new PriorityQueue<>(new Comparator<Operation>() {
             @Override
             public int compare(Operation o1, Operation o2) {
@@ -29,19 +29,19 @@ public class QuerySplitter {
             pq.add(op);
             index = originalQuery.indexOf("UNION", index + 1);
         }
-        index = originalQuery.indexOf("INTERSECTION");
+        index = originalQuery.indexOf("INTERSECT");
         while (index >= 0) {
             Operation op = new Operation(2, index);
             pq.add(op);
-            index = originalQuery.indexOf("INTERSECTION", index + 1);
+            index = originalQuery.indexOf("INTERSECT", index + 1);
         }
 
         List<UnprocessedQuery> queries = new ArrayList<>();
         for (String queryString: queryStrings) {
             if (pq.isEmpty()) {
-                this.queries.add(new UnprocessedQuery(queryString, 0));
+                this.queries.add(new UnprocessedQuery(queryString.trim(), 0));
             } else {
-                this.queries.add(new UnprocessedQuery(queryString, pq.poll().type));
+                this.queries.add(new UnprocessedQuery(queryString.trim(), pq.poll().type));
             }
         }
     }
