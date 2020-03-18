@@ -152,6 +152,9 @@ public class PlanCost {
             case JoinType.BLOCKNESTED:
                 joincost = (long) Math.ceil(leftpages*1.0/blockSize) * rightpages;
                 break;
+            case JoinType.INTERSECT:
+                joincost = leftpages + rightpages;
+                break;
             default:
                 System.out.println("join type is not supported");
                 return 0;
