@@ -4,10 +4,7 @@
 
 import qp.operators.Debug;
 import qp.operators.Operator;
-import qp.optimizer.BufferManager;
-import qp.optimizer.PlanCost;
-import qp.optimizer.RandomOptimizer;
-import qp.optimizer.SetOperationMergePlan;
+import qp.optimizer.*;
 import qp.parser.*;
 import qp.utils.*;
 
@@ -163,7 +160,7 @@ public class QueryMain {
     public static Operator getQueryPlan(SQLQuery sqlquery) {
         Operator root = null;
 
-        RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
+        SimulatedAnnealing optimizer = new SimulatedAnnealing(sqlquery);
         Operator planroot = optimizer.getOptimizedPlan();
 
         if (planroot == null) {

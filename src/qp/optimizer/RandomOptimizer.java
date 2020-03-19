@@ -398,7 +398,7 @@ public class RandomOptimizer {
     /**
      * Modifies the schema of operators which are modified due to selecing an alternative neighbor plan
      **/
-    private void modifySchema(Operator node) {
+    protected void modifySchema(Operator node) {
         // Todo: add other operators
         if (node.getOpType() == OpType.JOIN) {
             Operator left = ((Join) node).getLeft();
