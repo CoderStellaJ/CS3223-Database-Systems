@@ -223,6 +223,9 @@ public class RandomOptimizer {
         if (numJMeth > 1) {
             /** find the node that is to be altered **/
             Join node = (Join) findNodeAt(root, joinNum);
+            if (node == null) {
+                return root;
+            }
             int prevJoinMeth = node.getJoinType();
             int joinMeth = RandNumb.randInt(0, numJMeth - 1);
             while (joinMeth == prevJoinMeth) {
@@ -242,6 +245,9 @@ public class RandomOptimizer {
         System.out.println("------------------neighbor by commutative---------------");
         /** find the node to be altered**/
         Join node = (Join) findNodeAt(root, joinNum);
+        if (node == null) {
+            return root;
+        }
         Operator left = node.getLeft();
         Operator right = node.getRight();
         node.setLeft(right);
@@ -259,9 +265,11 @@ public class RandomOptimizer {
     protected Operator neighborAssoc(Operator root, int joinNum) {
         /** find the node to be altered**/
         Join op = (Join) findNodeAt(root, joinNum);
+        if (op == null) {
+            return root;
+        }
         Operator left = op.getLeft();
         Operator right = op.getRight();
-
         if (left.getOpType() == OpType.JOIN && right.getOpType() != OpType.JOIN) {
             transformLefttoRight(op, (Join) left);
         } else if (left.getOpType() != OpType.JOIN && right.getOpType() == OpType.JOIN) {
