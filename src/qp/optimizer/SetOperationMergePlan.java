@@ -38,7 +38,12 @@ public class SetOperationMergePlan {
     }
 
     private void createUnionOp(Operator leftOp, Operator rightOp) {
-
+        SortedRun leftRun = new SortedRun(leftOp, BufferManager.numBuffer);
+        leftRun.setSchema(leftOp.getSchema());
+        SortedRun rightRun = new SortedRun(rightOp, BufferManager.numBuffer);
+        rightRun.setSchema(rightOp.getSchema());
+        Union union = new Union(leftRun, rightRun, OpType.JOIN);
+        root = union;
     }
 
     private void createIntersectionOp(Operator leftOp, Operator rightOp) {

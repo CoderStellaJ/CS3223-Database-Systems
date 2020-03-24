@@ -13,6 +13,7 @@ public class JoinType {
     public static final int SORTMERGE = 2;
     public static final int HASHJOIN = 3;
     public static final int INTERSECT = 4;
+    public static final int UNION = 5;
 
     public static int numJoinTypes() {
         return 1;
