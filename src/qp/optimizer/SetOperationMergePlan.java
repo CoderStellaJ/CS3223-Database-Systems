@@ -49,9 +49,13 @@ public class SetOperationMergePlan {
     private void createIntersectionOp(Operator leftOp, Operator rightOp) {
         SortedRun leftRun = new SortedRun(leftOp, BufferManager.numBuffer);
         leftRun.setSchema(leftOp.getSchema());
+        leftOp = new Distinct(leftRun, OpType.DISTINCT);
+        leftOp.setSchema(leftRun.getSchema());
         SortedRun rightRun = new SortedRun(rightOp, BufferManager.numBuffer);
         rightRun.setSchema(rightOp.getSchema());
-        Intersect intersect = new Intersect(leftRun, rightRun, OpType.JOIN);
+        rightOp = new Distinct(rightRun, OpType.DISTINCT);
+        rightOp.setSchema(rightRun.getSchema());
+        Intersect intersect = new Intersect(leftOp, rightOp, OpType.JOIN);
         root = intersect;
     }
 
