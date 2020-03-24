@@ -40,9 +40,13 @@ public class SetOperationMergePlan {
     private void createUnionOp(Operator leftOp, Operator rightOp) {
         SortedRun leftRun = new SortedRun(leftOp, BufferManager.numBuffer);
         leftRun.setSchema(leftOp.getSchema());
+        leftOp = new Distinct(leftRun, OpType.DISTINCT);
+        leftOp.setSchema(leftRun.getSchema());
         SortedRun rightRun = new SortedRun(rightOp, BufferManager.numBuffer);
         rightRun.setSchema(rightOp.getSchema());
-        Union union = new Union(leftRun, rightRun, OpType.JOIN);
+        rightOp = new Distinct(rightRun, OpType.DISTINCT);
+        rightOp.setSchema(rightRun.getSchema());
+        Union union = new Union(leftOp, rightOp, OpType.JOIN);
         root = union;
     }
 
