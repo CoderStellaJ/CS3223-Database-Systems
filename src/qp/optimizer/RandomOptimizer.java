@@ -300,6 +300,7 @@ public class RandomOptimizer {
      * @return
      */
     protected Operator neighborSortPosition(Operator root, int joinNum) {
+        System.out.println("------------------neighbor by moving sorting position---------------");
         Operator grandParent = findSortNodeGrandParent(root);
         if (grandParent == null) {
             return root;
@@ -328,8 +329,9 @@ public class RandomOptimizer {
             } else {
                 if (RandNumb.flipCoin()) {
                     sortMoveDown(grandParent.getBase());
+                } else {
+                    sortMoveUp(grandParent);
                 }
-                sortMoveUp(grandParent);
             }
             modifySchema(root);
             return root;
@@ -379,10 +381,13 @@ public class RandomOptimizer {
                 child.setSchema(newSort.getSchema());
                 if (isJoin && isLeft) {
                     ((Join) node).setLeft(child);
+                    node.setSchema(child.getSchema().joinWith(((Join) node).getRight().getSchema()));
                 } else if (isJoin) {
                     ((Join) node).setRight(child);
+                    node.setSchema((((Join) node).getRight().getSchema()).joinWith(child.getSchema()));
                 } else {
                     node.setBase(child);
+                    node.setSchema(child.getSchema());
                 }
             } else if (base.getOpType() == OpType.JOIN) {
                 ArrayList<Integer> indexes = new ArrayList<>();
@@ -405,10 +410,13 @@ public class RandomOptimizer {
                 child.setSchema(newSort.getSchema());
                 if (isJoin && isLeft) {
                     ((Join) node).setLeft(child);
+                    node.setSchema(child.getSchema().joinWith(((Join) node).getRight().getSchema()));
                 } else if (isJoin) {
                     ((Join) node).setRight(child);
+                    node.setSchema((((Join) node).getRight().getSchema()).joinWith(child.getSchema()));
                 } else {
                     node.setBase(child);
+                    node.setSchema(child.getSchema());
                 }
             } else if (base.getOpType() == OpType.PROJECT) {
                 newSort = new SortedRun(base, BufferManager.numBuffer);
@@ -417,10 +425,13 @@ public class RandomOptimizer {
                 child.setSchema(newSort.getSchema());
                 if (isJoin && isLeft) {
                     ((Join) node).setLeft(child);
+                    node.setSchema(child.getSchema().joinWith(((Join) node).getRight().getSchema()));
                 } else if (isJoin) {
                     ((Join) node).setRight(child);
+                    node.setSchema((((Join) node).getRight().getSchema()).joinWith(child.getSchema()));
                 } else {
                     node.setBase(child);
+                    node.setSchema(child.getSchema());
                 }
             }
         }
