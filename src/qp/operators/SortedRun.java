@@ -32,6 +32,20 @@ public class SortedRun extends Operator {
         this.comparator = new TupleComparator();
     }
 
+    public SortedRun(Operator base, int numBuffer, int index) {
+        super(OpType.SORT);
+        this.base = base;
+        this.numBuffer = numBuffer;
+        this.comparator = new TupleComparator(index, index);
+    }
+
+    public SortedRun(Operator base, int numBuffer, ArrayList<Integer> indexes) {
+        super(OpType.SORT);
+        this.base = base;
+        this.numBuffer = numBuffer;
+        this.comparator = new TupleComparator(indexes, indexes);
+    }
+
     public Operator getBase() {
         return base;
     }

@@ -15,6 +15,6 @@ public class JoinType {
     public static final int INTERSECT = 4;
 
     public static int numJoinTypes() {
-        return 1;
+        return 2;
     }
 }

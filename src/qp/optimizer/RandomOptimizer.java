@@ -11,6 +11,7 @@ import qp.utils.RandNumb;
 import qp.utils.SQLQuery;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class RandomOptimizer {
 
@@ -20,11 +21,12 @@ public class RandomOptimizer {
     public static final int METHODCHOICE = 0;  // Selecting neighbor by changing a method for an operator
     public static final int COMMUTATIVE = 1;   // By rearranging the operators by commutative rule
     public static final int ASSOCIATIVE = 2;   // Rearranging the operators by associative rule
+    public static final int SORT_POSITION_CHOICE = 3; // Rearranging position of sort
 
     /**
      * Number of altenative methods available for a node as specified above
      **/
-    public static final int NUMCHOICES = 3;
+    public static final int NUMCHOICES = 4;
 
     SQLQuery sqlquery;  // Vector of Vectors of Select + From + Where + GroupBy
     int numJoin;        // Number of joins in this query plan
@@ -111,6 +113,9 @@ public class RandomOptimizer {
                 break;
             case ASSOCIATIVE:
                 neighbor = neighborAssoc(root, nodeNum);
+                break;
+            case SORT_POSITION_CHOICE:
+                neighbor = neighborSortPosition(root, nodeNum);
                 break;
         }
         return neighbor;
@@ -289,6 +294,139 @@ public class RandomOptimizer {
     }
 
     /**
+     * Change the ordering of sort operation
+     * @param root
+     * @param joinNum
+     * @return
+     */
+    protected Operator neighborSortPosition(Operator root, int joinNum) {
+        Operator grandParent = findSortNodeGrandParent(root);
+        if (grandParent == null) {
+            return root;
+        }
+        if (grandParent.getBase() == null) {
+            return root;
+        }
+        if (grandParent.getOpType() == OpType.SORT) {
+            return root;
+        }
+        if (grandParent.getOpType() == OpType.JOIN) {
+            if (((Join) grandParent).getLeft().getOpType() == OpType.SORT ||
+                    ((Join) grandParent).getRight().getOpType() == OpType.SORT) {
+                sortMoveDown(grandParent);
+            } else {
+                sortMoveUp(grandParent);
+            }
+            modifySchema(root);
+            return root;
+        }
+        if (grandParent.getOpType() == OpType.SELECT ||
+                grandParent.getOpType() == OpType.PROJECT ||
+                grandParent.getOpType() == OpType.DISTINCT) {
+            if (grandParent.getBase().getOpType() == OpType.SORT) {
+                sortMoveDown(grandParent);
+            } else {
+                if (RandNumb.flipCoin()) {
+                    sortMoveDown(grandParent.getBase());
+                }
+                sortMoveUp(grandParent);
+            }
+            modifySchema(root);
+            return root;
+        }
+
+        return root;
+    }
+
+    protected void sortMoveUp(Operator node) {
+        System.out.println("Cannot move up yet");
+    }
+
+    protected void sortMoveDown(Operator node) {
+        System.out.println("Moving down!!!!!!!!!!!!!");
+        if (node.getOpType() == OpType.JOIN) {
+            Operator left = ((Join) node).getLeft();
+            Operator right = ((Join) node).getRight();
+            if (left.getOpType() == OpType.SORT) {
+                Operator tmp1 = left.getBase();
+                generateNewSortedRunAndSwitchPosition(node, tmp1, true, true);
+            }
+            if (right.getOpType() == OpType.SORT) {
+                Operator tmp2 = left.getBase();
+                generateNewSortedRunAndSwitchPosition(node, tmp2, true, false);
+            }
+        } else {
+            Operator child = node.getBase();
+            if (child.getOpType() == OpType.SORT) {
+                Operator temp = child.getBase();
+                generateNewSortedRunAndSwitchPosition(node, temp, false, false);
+            }
+        }
+    }
+
+    private void generateNewSortedRunAndSwitchPosition(Operator node, Operator child, boolean isJoin, boolean isLeft) {
+        if (child != null) {
+            Operator base = child.getBase();
+            Operator newSort;
+            if (base == null || base.getOpType() == OpType.SCAN) {
+                // Do nothing
+            } else if (base.getOpType() == OpType.SELECT) {
+                Attribute attr = ((Select) base).getCondition().getLhs();
+                int index = base.getSchema().indexOf(attr);
+                newSort = new SortedRun(base, BufferManager.numBuffer, index);
+                newSort.setSchema(base.getSchema());
+                child.setBase(newSort);
+                child.setSchema(newSort.getSchema());
+                if (isJoin && isLeft) {
+                    ((Join) node).setLeft(child);
+                } else if (isJoin) {
+                    ((Join) node).setRight(child);
+                } else {
+                    node.setBase(child);
+                }
+            } else if (base.getOpType() == OpType.JOIN) {
+                ArrayList<Integer> indexes = new ArrayList<>();
+                if (((Join) base).getConditionList() != null) {
+                    for (Condition condition: ((Join) base).getConditionList()) {
+                        indexes.add(base.getSchema().indexOf(condition.getLhs()));
+                    }
+                }
+                if (((Join) base).getCondition() != null) {
+                    indexes.add(base.getSchema().indexOf(((Join) base).getCondition().getLhs()));
+                }
+                if (indexes.size() > 0) {
+                    newSort = new SortedRun(base, BufferManager.numBuffer, indexes);
+                    newSort.setSchema(base.getSchema());
+                } else {
+                    newSort = new SortedRun(base, BufferManager.numBuffer);
+                    newSort.setSchema(base.getSchema());
+                }
+                child.setBase(newSort);
+                child.setSchema(newSort.getSchema());
+                if (isJoin && isLeft) {
+                    ((Join) node).setLeft(child);
+                } else if (isJoin) {
+                    ((Join) node).setRight(child);
+                } else {
+                    node.setBase(child);
+                }
+            } else if (base.getOpType() == OpType.PROJECT) {
+                newSort = new SortedRun(base, BufferManager.numBuffer);
+                newSort.setSchema(base.getSchema());
+                child.setBase(newSort);
+                child.setSchema(newSort.getSchema());
+                if (isJoin && isLeft) {
+                    ((Join) node).setLeft(child);
+                } else if (isJoin) {
+                    ((Join) node).setRight(child);
+                } else {
+                    node.setBase(child);
+                }
+            }
+        }
+    }
+
+    /**
      * This is given plan (A X B) X C
      **/
     protected void transformLefttoRight(Join op, Join left) {
@@ -401,6 +539,62 @@ public class RandomOptimizer {
         } else {
             return null;
         }
+    }
+
+    /**
+     * This function finds the parent node of the parent node of a sort operator, used for push up sort operations
+     * @param node
+     * @return
+     */
+    protected Operator findSortNodeGrandParent(Operator node) {
+        if (node.getOpType() == OpType.SCAN) {
+            return null;
+        }
+        if (node.getOpType() == OpType.SORT) {
+            return node;
+        }
+        if (node.getOpType() == OpType.JOIN) {
+            Operator temp = findSortNodeGrandParent(((Join) node).getLeft());
+            if (temp == null) {
+                temp = findSortNodeGrandParent(((Join) node).getRight());
+            }
+            return temp;
+        }
+        if (node.getOpType() == OpType.SELECT ||
+                node.getOpType() == OpType.PROJECT ||
+                node.getOpType() == OpType.DISTINCT) {
+            if (node.getBase() == null) {
+                return null;
+            }
+            Operator child = node.getBase();
+            if (child.getOpType() == OpType.SCAN) {
+                return null;
+            }
+            if (child.getOpType() == OpType.SORT) {
+                return node;
+            }
+            if (child.getOpType() == OpType.JOIN) {
+                if (((Join) child).getLeft().getOpType() == OpType.SORT ||
+                        ((Join) child).getRight().getOpType() == OpType.SORT) {
+                    return node;
+                }
+                Operator tmp = findSortNodeGrandParent(((Join) child).getLeft());
+                if (tmp == null) {
+                    tmp = findSortNodeGrandParent(((Join) child).getRight());
+                }
+                return tmp;
+            }
+            if (child.getOpType() == OpType.SELECT ||
+                    child.getOpType() == OpType.PROJECT ||
+                    child.getOpType() == OpType.DISTINCT) {
+                if (child.getBase().getOpType() == OpType.SORT) {
+                    return node;
+                }
+                return findSortNodeGrandParent(child);
+            }
+        }
+
+        return null;
     }
 
     /**
