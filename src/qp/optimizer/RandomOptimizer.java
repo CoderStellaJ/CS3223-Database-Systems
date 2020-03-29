@@ -619,8 +619,10 @@ public class RandomOptimizer {
             modifySchema(left);
             modifySchema(right);
             node.setSchema(left.getSchema().joinWith(right.getSchema()));
-        } else if (node.getOpType() == OpType.SELECT) {
-            Operator base = ((Select) node).getBase();
+        } else if (node.getOpType() == OpType.SELECT ||
+                node.getOpType() == OpType.SORT ||
+                node.getOpType() == OpType.DISTINCT) {
+            Operator base = node.getBase();
             modifySchema(base);
             node.setSchema(base.getSchema());
         } else if (node.getOpType() == OpType.PROJECT) {
