@@ -373,6 +373,16 @@ public class RandomOptimizer {
     }
 
     private void generateNewSortedRunAndSwitchPosition(Operator node, Operator child, boolean isJoin, boolean isLeft) {
+        if (child.getOpType() == OpType.SORT) {
+            if (isJoin && isLeft) {
+                ((Join) node).setLeft(child);
+            } else if (isJoin) {
+                ((Join) node).setRight(child);
+            } else {
+                node.setBase(child);
+            }
+        }
+
         if (child != null) {
             Operator base = child.getBase();
             Operator newSort;
