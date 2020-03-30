@@ -31,6 +31,9 @@ public class RandomOptimizer {
     SQLQuery sqlquery;  // Vector of Vectors of Select + From + Where + GroupBy
     int numJoin;        // Number of joins in this query plan
 
+    int sortMoveDownCount = 0;
+    int sortMoveUpCount = 0;
+
     /**
      * constructor
      **/
@@ -334,11 +337,7 @@ public class RandomOptimizer {
                     sortMoveUp(grandParent);
                 }
             }
-            try {
-                modifySchema(root);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                System.out.println(root);
-            }
+            modifySchema(root);
 
             return root;
         }
@@ -347,7 +346,65 @@ public class RandomOptimizer {
     }
 
     protected void sortMoveUp(Operator node) {
-        System.out.println("Cannot move up yet");
+        System.out.println("Moving up!!!!!!!!!!!!!");
+        if (node.getOpType() == OpType.JOIN) {
+            Operator leftParent = ((Join) node).getLeft();
+            generateNewSortedRunAndSwitchUp(node, leftParent, true, true);
+            Operator rightParent = ((Join) node).getRight();
+            generateNewSortedRunAndSwitchUp(node, rightParent, true, false);
+        } else if (node.getOpType() == OpType.SELECT ||
+                node.getOpType() == OpType.PROJECT ||
+                node.getOpType() == OpType.DISTINCT) {
+            Operator parent = node.getBase();
+            generateNewSortedRunAndSwitchUp(node, parent, false, false);
+        }
+    }
+
+    private void generateNewSortedRunAndSwitchUp(Operator node, Operator parent, boolean isJoin, boolean isLeft) {
+        if (parent.getOpType() == OpType.JOIN) {
+            if (((Join) parent).getLeft().getOpType() == OpType.SORT &&
+                    ((Join) parent).getRight().getOpType() == OpType.SORT) {
+                ((Join) parent).setLeft(((Join) parent).getLeft().getBase());
+                ((Join) parent).setRight(((Join) parent).getRight().getBase());
+                ArrayList<Integer> indexes = new ArrayList<>();
+                for (Condition condition: ((Join) parent).getConditionList()) {
+                    indexes.add(parent.getSchema().indexOf(condition.getLhs()));
+                }
+                SortedRun newSort;
+                if (indexes.size() > 0) {
+                    newSort = new SortedRun(parent, BufferManager.numBuffer, indexes);
+                } else {
+                    newSort = new SortedRun(parent, BufferManager.numBuffer);
+                }
+                if (sortMoveUpCount < sortMoveDownCount) {
+                    if (isJoin && isLeft) {
+                        ((Join) node).setLeft(newSort);
+                    } else if (isJoin) {
+                        ((Join) node).setRight(newSort);
+                    } else {
+                        node.setBase(newSort);
+                    }
+                    sortMoveUpCount++;
+                }
+            }
+        } else if (parent.getOpType() == OpType.SELECT ||
+                parent.getOpType() == OpType.PROJECT) {
+            if (parent.getBase().getOpType() == OpType.SORT) {
+                SortedRun oldSortedRun = (SortedRun) parent.getBase();
+                parent.setBase(oldSortedRun.getBase());
+                SortedRun newSortedRun = new SortedRun(parent, BufferManager.numBuffer, oldSortedRun.getComparator());
+                if (sortMoveUpCount < sortMoveDownCount) {
+                    if (isJoin && isLeft) {
+                        ((Join) node).setLeft(newSortedRun);
+                    } else if (isJoin) {
+                        ((Join) node).setRight(newSortedRun);
+                    } else {
+                        node.setBase(newSortedRun);
+                    }
+                    sortMoveUpCount++;
+                }
+            }
+        }
     }
 
     protected void sortMoveDown(Operator node) {
@@ -357,22 +414,22 @@ public class RandomOptimizer {
             Operator right = ((Join) node).getRight();
             if (left.getOpType() == OpType.SORT) {
                 Operator tmp1 = left.getBase();
-                generateNewSortedRunAndSwitchPosition(node, tmp1, true, true);
+                generateNewSortedRunAndSwitchDown(node, tmp1, true, true);
             }
             if (right.getOpType() == OpType.SORT) {
                 Operator tmp2 = right.getBase();
-                generateNewSortedRunAndSwitchPosition(node, tmp2, true, false);
+                generateNewSortedRunAndSwitchDown(node, tmp2, true, false);
             }
         } else {
             Operator child = node.getBase();
             if (child.getOpType() == OpType.SORT) {
                 Operator temp = child.getBase();
-                generateNewSortedRunAndSwitchPosition(node, temp, false, false);
+                generateNewSortedRunAndSwitchDown(node, temp, false, false);
             }
         }
     }
 
-    private void generateNewSortedRunAndSwitchPosition(Operator node, Operator child, boolean isJoin, boolean isLeft) {
+    private void generateNewSortedRunAndSwitchDown(Operator node, Operator child, boolean isJoin, boolean isLeft) {
         if (child.getOpType() == OpType.SORT) {
             if (isJoin && isLeft) {
                 ((Join) node).setLeft(child);
@@ -453,6 +510,7 @@ public class RandomOptimizer {
                     } else {
                         node.setBase(child);
                     }
+                    sortMoveDownCount++;
                 }
             } else if (base.getOpType() == OpType.SELECT) {
                 Attribute attr = ((Select) base).getCondition().getLhs();
@@ -466,6 +524,7 @@ public class RandomOptimizer {
                 } else {
                     node.setBase(child);
                 }
+                sortMoveDownCount++;
             } else if (base.getOpType() == OpType.JOIN) {
                 ArrayList<Integer> indexes = new ArrayList<>();
                 if (((Join) base).getConditionList() != null) {
@@ -489,6 +548,7 @@ public class RandomOptimizer {
                 } else {
                     node.setBase(child);
                 }
+                sortMoveDownCount++;
             } else if (base.getOpType() == OpType.PROJECT ||
                     base.getOpType() == OpType.SCAN) {
                 newSort = new SortedRun(base, BufferManager.numBuffer);
@@ -500,6 +560,7 @@ public class RandomOptimizer {
                 } else {
                     node.setBase(child);
                 }
+                sortMoveDownCount++;
             }
         }
     }
@@ -632,6 +693,31 @@ public class RandomOptimizer {
             return node;
         }
         if (node.getOpType() == OpType.JOIN) {
+            Operator leftChild = ((Join) node).getLeft();
+            if (leftChild.getOpType() == OpType.JOIN) {
+                if (((Join) leftChild).getLeft().getOpType() == OpType.SORT ||
+                        ((Join) leftChild).getRight().getOpType() == OpType.SORT) {
+                    return node;
+                }
+            } else if (leftChild.getOpType() == OpType.SELECT ||
+                    leftChild.getOpType() == OpType.PROJECT) {
+                if (leftChild.getBase().getOpType() == OpType.SORT) {
+                    return node;
+                }
+            }
+            Operator rightChild = ((Join) node).getRight();
+            if (rightChild.getOpType() == OpType.JOIN) {
+                if (((Join) rightChild).getLeft().getOpType() == OpType.SORT ||
+                        ((Join) rightChild).getRight().getOpType() == OpType.SORT) {
+                    return node;
+                }
+            } else if (rightChild.getOpType() == OpType.SELECT ||
+                    rightChild.getOpType() == OpType.PROJECT) {
+                if (rightChild.getBase().getOpType() == OpType.SORT) {
+                    return node;
+                }
+            }
+
             Operator temp = findSortNodeGrandParent(((Join) node).getLeft());
             if (temp == null) {
                 temp = findSortNodeGrandParent(((Join) node).getRight());
