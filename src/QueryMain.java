@@ -160,8 +160,8 @@ public class QueryMain {
     public static Operator getQueryPlan(SQLQuery sqlquery) {
         Operator root = null;
 
+        RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
         //SimulatedAnnealing optimizer = new SimulatedAnnealing(sqlquery);
-        SimulatedAnnealing optimizer = new SimulatedAnnealing(sqlquery);
         Operator planroot = optimizer.getOptimizedPlan();
 
         if (planroot == null) {

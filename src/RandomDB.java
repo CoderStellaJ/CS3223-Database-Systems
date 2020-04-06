@@ -26,9 +26,9 @@ public class RandomDB {
         }
         String tblname = args[0];
         String srcfile = dir + args[0] + ".det";
-        String metafile = args[0] + ".md";
-        String datafile = args[0] + ".txt";
-        String statfile = args[0] + ".stat";
+        String metafile = dir + args[0] + ".md";
+        String datafile = dir + args[0] + ".txt";
+        String statfile = dir + args[0] + ".stat";
         int numtuple = Integer.parseInt(args[1]);
 
         try {

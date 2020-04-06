@@ -8,10 +8,13 @@ import qp.operators.*;
 import qp.utils.*;
 
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.Properties;
 
 public class RandomInitialPlan {
 
@@ -25,6 +28,7 @@ public class RandomInitialPlan {
     int numJoin;            // Number of joins in this query
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
     Operator root;          // Root of the query plan tree
+    private static String propPath = "./src/resources/common.properties";
 
     public RandomInitialPlan(SQLQuery sqlquery) {
         this.sqlquery = sqlquery;
@@ -87,7 +91,8 @@ public class RandomInitialPlan {
             /** Read the schema of the table from tablename.md file
              ** md stands for metadata
              **/
-            String filename = tabname + ".md";
+            String dir = getDBPath();
+            String filename = dir + tabname + ".md";
             try {
                 ObjectInputStream _if = new ObjectInputStream(new FileInputStream(filename));
                 Schema schm = (Schema) _if.readObject();
@@ -168,7 +173,7 @@ public class RandomInitialPlan {
             int numJMeth = JoinType.numJoinTypes();
             int joinMeth = RandNumb.randInt(0, numJMeth - 1);
             //debugging, choose the type you implemented
-            // joinMeth = 1;
+            joinMeth = 2;
             System.out.println("selected join type is: " + joinMeth);
             jn.setJoinType(joinMeth);
             modifyHashtable(left, jn);
@@ -221,5 +226,17 @@ public class RandomInitialPlan {
                 entry.setValue(newop);
             }
         }
+    }
+
+    public static String getDBPath() {
+        try (InputStream input = new FileInputStream(propPath)) {
+            Properties prop = new Properties();
+            prop.load(input);
+
+            return prop.getProperty("db.path");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return "";
     }
 }

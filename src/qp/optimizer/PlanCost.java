@@ -12,16 +12,19 @@ import qp.utils.Condition;
 import qp.utils.Schema;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.StringTokenizer;
 
 public class PlanCost {
 
     long cost;
     long numtuple;
-
+    private static String propPath = "./src/resources/common.properties";
     /**
      * If buffers are not enough for a selected join
      * * then this plan is not feasible and return
@@ -226,7 +229,8 @@ public class PlanCost {
      **/
     protected long getStatistics(Scan node) {
         String tablename = node.getTabName();
-        String filename = tablename + ".stat";
+        String dir = getDBPath();
+        String filename = dir + tablename + ".stat";
         Schema schema = node.getSchema();
         int numAttr = schema.getNumCols();
         BufferedReader in = null;
@@ -324,6 +328,18 @@ public class PlanCost {
             return Long.MAX_VALUE;
         }
         return intuples;
+    }
+
+    public static String getDBPath() {
+        try (InputStream input = new FileInputStream(propPath)) {
+            Properties prop = new Properties();
+            prop.load(input);
+
+            return prop.getProperty("db.path");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return "";
     }
 
 }
