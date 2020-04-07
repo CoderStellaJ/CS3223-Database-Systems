@@ -102,7 +102,7 @@ public class SortedRun extends Operator {
         if (allPollOut(runs, 0, 0)) {
             return null;
         }
-        outbatch = runs.get(0).poll();
+        outbatch = runs.get(0).pollFirst();
         return outbatch;
     }
 
@@ -173,30 +173,65 @@ public class SortedRun extends Operator {
 
         // Keep track the curr index of tuple in each batch
         int[] indexes = new int[right - left + 1];
-        int smallestIndex = left;
-        Tuple smallestTuple = runs.get(left).get(0).get(0);
+        int smallestIndex = -1;
+        Tuple smallestTuple = null;
+        checkIndices(runs, left, right, indexes);
+        System.out.println(runs.size());
 
-        while (!allPollOut(runs, left, right)) {
-            outbatch = new Batch(batchsize);
-            while (!outbatch.isFull()) {
-                for (int i = left; i <= right; i++) {
-                    int index = indexes[i - left];
-                    if (Tuple.compareTuples(smallestTuple, runs.get(i).peek().get(index), 0) > 0) {
-                        smallestIndex = i;
-                        smallestTuple = runs.get(i).peek().get(index);
-                    }
+        while (!allPollOut(indexes)) {
+
+            // Find the smallest tuple from the runs
+            for (int i = left; i <= right; i++) {
+                int index = indexes[i - left];
+                if (index < 0) {
+                    continue;
                 }
-                outbatch.add(runs.get(smallestIndex).peek().get(indexes[smallestIndex-left]));
-                indexes[smallestIndex-left]++;
-                if (indexes[smallestIndex-left] >= runs.get(smallestIndex).peek().size()) {
-                    runs.get(smallestIndex).poll();
-                    indexes[smallestIndex-left] = 0;
+                Tuple currentTuple = runs.get(i).peekFirst().get(index);
+                if (smallestTuple == null || comparator.compare(smallestTuple, currentTuple) > 0) {
+                    smallestIndex = i;
+                    smallestTuple = currentTuple;
                 }
             }
-            run.add(outbatch);
-        }
+            if (smallestTuple != null) {
+                System.out.println("==============");
+                for (int i = 0; i < runs.get(smallestIndex).peekFirst().size(); i++) {
+                    System.out.println(runs.get(smallestIndex).peekFirst().get(i).data());
 
+                }
+                System.out.println("----------");
+                System.out.println(smallestTuple.data());
+                System.out.println("==============");
+            }
+
+            indexes[smallestIndex-left]++;
+            if (runs.get(smallestIndex).peekFirst() != null && indexes[smallestIndex-left] >= runs.get(smallestIndex).peekFirst().size()) {
+                runs.get(smallestIndex).pollFirst();
+                indexes[smallestIndex-left] = 0;
+            }
+
+            outbatch.add(smallestTuple);
+            smallestIndex = -1;
+            smallestTuple = null;
+
+            if (outbatch.isFull()) {
+                run.add(outbatch);
+                outbatch = new Batch(batchsize);
+            }
+
+            // Set the index of empty run to -1
+            checkIndices(runs, left, right, indexes);
+        }
+        run.add(outbatch);
         return run;
+    }
+
+    public boolean allPollOut(int[] indices) {
+        for (int i = 0; i < indices.length; i++) {
+            if (indices[i] != -1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean allPollOut(List<LinkedList<Batch>> runs, int left, int right) {
@@ -206,5 +241,14 @@ public class SortedRun extends Operator {
             }
         }
         return true;
+    }
+
+    public int[] checkIndices(List<LinkedList<Batch>> runs, int left, int right, int[] indices) {
+        for (int i = left; i <= right; i++) {
+            if (runs.get(i).isEmpty() || runs.get(i).peekFirst() == null || runs.get(i).peekFirst().size() == 0) {
+                indices[i] = -1;
+            }
+        }
+        return indices;
     }
 }

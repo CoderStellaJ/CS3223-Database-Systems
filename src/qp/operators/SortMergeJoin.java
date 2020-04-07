@@ -41,6 +41,18 @@ public class SortMergeJoin extends Join{
         numBuff = jn.getNumBuff();
     }
 
+    @Override
+    public void setLeft(Operator left) {
+        super.setLeft(new SortedRun(left, numBuff));
+        this.left.setSchema(left.schema);
+    }
+
+    @Override
+    public void setRight(Operator right) {
+        super.setRight(new SortedRun(right, numBuff));
+        this.right.setSchema(right.schema);
+    }
+
     /**
      * During open finds the index of the join attributes
      * * Materializes the right hand side into a file
