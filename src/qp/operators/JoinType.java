@@ -16,6 +16,6 @@ public class JoinType {
     public static final int UNION = 5;
 
     public static int numJoinTypes() {
-        return 2;
+        return 1;
     }
 }
