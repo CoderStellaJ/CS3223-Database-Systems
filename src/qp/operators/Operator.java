@@ -16,15 +16,6 @@ public class Operator {
         this.optype = type;
     }
 
-    // Let Polymorphism do its work
-    public Operator getBase() {
-        return null;
-    }
-
-    public void setBase(Operator base) {
-
-    }
-
     public Schema getSchema() {
         return schema;
     }

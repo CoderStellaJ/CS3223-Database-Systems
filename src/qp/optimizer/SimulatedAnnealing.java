@@ -8,8 +8,8 @@ import java.util.Random;
 
 public class SimulatedAnnealing extends RandomOptimizer {
 
-    public static final double INITIAL_TEMPERATURE = 900;
-    public static final double TEMPERATURE_THRESHOLD = 80;
+    public static final double INITIAL_TEMPERATURE = 100;
+    public static final double TEMPERATURE_THRESHOLD = 8;
 
     int numJoin;        // Number of joins in this query plan
     private int iteration;
@@ -44,8 +44,8 @@ public class SimulatedAnnealing extends RandomOptimizer {
             PlanCost oldPc = new PlanCost();
             PlanCost newPc = new PlanCost();
             long oldCost = oldPc.getCost(currPlan);
-            long newCost = newPc.getCost(newPlan);
-            if (isAccepted(temperature, oldCost - newCost)) {
+            long newCost = newPc.getCost(currPlan);
+            if (isAccepted(temperature, newCost - oldCost)) {
                 currPlan = newPlan;
             }
 
@@ -61,15 +61,13 @@ public class SimulatedAnnealing extends RandomOptimizer {
     private boolean isAccepted(double temperature, double improvementFromOlderPlan) {
         double acceptanceProbability = getAcceptanceProbability(temperature, improvementFromOlderPlan);
         if (acceptanceProbability >= random.nextDouble()) {
-            System.out.println("Accepted with probability: " + acceptanceProbability);
             return true;
         }
         return false;
     }
 
     private double getAcceptanceProbability(double temperature, double improvementFromOlderPlan) {
-        System.out.println("Improvement in cost: " + improvementFromOlderPlan);
-        if (improvementFromOlderPlan >= 0) {
+        if (improvementFromOlderPlan > 0) {
             return 1.0;
         } else {
             return Math.exp((improvementFromOlderPlan) / temperature);
