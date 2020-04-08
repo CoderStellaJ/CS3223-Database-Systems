@@ -192,6 +192,8 @@ public class SortedRun extends Operator {
                     smallestTuple = currentTuple;
                 }
             }
+            //debugging printout
+            /*
             if (smallestTuple != null) {
                 System.out.println("==============");
                 for (int i = 0; i < runs.get(smallestIndex).peekFirst().size(); i++) {
@@ -201,7 +203,7 @@ public class SortedRun extends Operator {
                 System.out.println("----------");
                 System.out.println(smallestTuple.data());
                 System.out.println("==============");
-            }
+            } */
 
             indexes[smallestIndex-left]++;
             if (runs.get(smallestIndex).peekFirst() != null && indexes[smallestIndex-left] >= runs.get(smallestIndex).peekFirst().size()) {
