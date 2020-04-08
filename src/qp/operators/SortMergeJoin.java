@@ -237,6 +237,7 @@ public class SortMergeJoin extends Join{
 
                 // Clear buffer and stop backtracking
                 backtrackbuffer = new ArrayList<>();
+                backtrackcurs = 0;
                 ifBacktracking = false;
                 return;
 

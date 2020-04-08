@@ -176,7 +176,6 @@ public class SortedRun extends Operator {
         int smallestIndex = -1;
         Tuple smallestTuple = null;
         checkIndices(runs, left, right, indexes);
-        System.out.println(runs.size());
 
         while (!allPollOut(indexes)) {
 
@@ -248,7 +247,7 @@ public class SortedRun extends Operator {
     public int[] checkIndices(List<LinkedList<Batch>> runs, int left, int right, int[] indices) {
         for (int i = left; i <= right; i++) {
             if (runs.get(i).isEmpty() || runs.get(i).peekFirst() == null || runs.get(i).peekFirst().size() == 0) {
-                indices[i] = -1;
+                indices[i-left] = -1;
             }
         }
         return indices;
