@@ -1,13 +1,5 @@
-*.tbl
-*.txt
-*.stat
-BILL.md
-CART.md
-CUSTOMER.md
-CARTDETAILS.md
-A.md
-B.md
-C.md
+BNJtemp*
+IBNJtemp*
 
 
 # Created by https://www.gitignore.io/api/intellij
