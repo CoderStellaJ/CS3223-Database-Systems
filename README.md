@@ -27,3 +27,23 @@ set program arguments to `queryfilename resultfile pagesize numbuffer`
 You can change `joinMeth` to the type you implemented for debugging
 
 Note: we specified our file path in `RandomDB.java`. Please change it when you pull from github.
+
+### Experiments
+1. Define `.det` file
+    - First line: number of columns
+    - Second line: size of tuple = number of bytes
+    - Third line onwards: colname, coltype, range of the values, key type PK/FK/NK, attribute size (numbytes)
+
+2. run `RandomDB` numrecords argument should be larger than 10000.
+    - `AIRCRAFTS` 20000
+    - `CERTIFIED` 30000
+    - `EMPLOYEES` 40000
+    - `FLIGHTS` 40000
+    - `SCHEDULE` 40000
+
+3. run `ConvertTxtToTbl`
+
+4. Modify code to execute a specific plan
+    - change `joinMeth` in `createJoinOp()` of `RandomInitialPlan.java`
+    - return initial plan directly `return rip.prepareInitialPlan();` in `getOptimizedPlan()` from `RandomOptimizer.java`
+    - change optimizer in `QueryMain.java` to `RandomOptimizer`

@@ -11,7 +11,9 @@ import qp.utils.Tuple;
 import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.util.Properties;
 
 /**
  * Scan operator - read data from a file
@@ -22,6 +24,7 @@ public class Scan extends Operator {
     String tabname;        // Table name
     ObjectInputStream in;  // Input file being scanned
     boolean eos;           // To indicate whether end of stream reached or not
+    private static String propPath = "./src/resources/common.properties";
 
     /**
      * Constructor - just save filename
@@ -29,7 +32,8 @@ public class Scan extends Operator {
     public Scan(String tabname, int type) {
         super(type);
         this.tabname = tabname;
-        filename = tabname + ".tbl";
+        String dir = getDBPath();
+        filename = dir + tabname + ".tbl";
     }
 
     public String getTabName() {
@@ -101,6 +105,18 @@ public class Scan extends Operator {
         Scan newscan = new Scan(newtab, optype);
         newscan.setSchema((Schema) schema.clone());
         return newscan;
+    }
+
+    public static String getDBPath() {
+        try (InputStream input = new FileInputStream(propPath)) {
+            Properties prop = new Properties();
+            prop.load(input);
+
+            return prop.getProperty("db.path");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return "";
     }
 
 }

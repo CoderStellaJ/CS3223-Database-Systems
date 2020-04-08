@@ -11,9 +11,11 @@ import qp.utils.Tuple;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.StringTokenizer;
 
 public class ConvertTxtToTbl {
+    private static String propPath = "./src/resources/common.properties";
 
     public static void main(String[] args) throws IOException {
         // check the arguments
@@ -21,12 +23,15 @@ public class ConvertTxtToTbl {
             System.out.println("usage: java ConvertTxtToTbl <tablename> \n creats <tablename>.tbl files");
             System.exit(1);
         }
+        String dir = getDBPath();
+
         String tblname = args[0];
-        String mdfile = tblname + ".md";
-        String tblfile = tblname + ".tbl";
+        String txtfile = dir + args[0] + ".txt";
+        String mdfile = dir + tblname + ".md";
+        String tblfile = dir + tblname + ".tbl";
 
         /** open the input and output streams **/
-        BufferedReader in = new BufferedReader(new FileReader(tblname + ".txt"));
+        BufferedReader in = new BufferedReader(new FileReader(txtfile));
         ObjectOutputStream outtbl = new ObjectOutputStream(new FileOutputStream(tblfile));
 
         /** First Line is METADATA **/
@@ -70,6 +75,18 @@ public class ConvertTxtToTbl {
         }
         outtbl.close();
         in.close();
+    }
+
+    public static String getDBPath() {
+        try (InputStream input = new FileInputStream(propPath)) {
+            Properties prop = new Properties();
+            prop.load(input);
+
+            return prop.getProperty("db.path");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return "";
     }
 
 }

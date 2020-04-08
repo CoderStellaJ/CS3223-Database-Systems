@@ -132,6 +132,10 @@ public class RandomOptimizer {
     public Operator getOptimizedPlan() {
         /** get an initial plan for the given sql query **/
         RandomInitialPlan rip = new RandomInitialPlan(sqlquery);
+        ///////////// fix a plan for experiment//////////////////
+        // Operator root = rip.prepareInitialPlan();
+        // return root;
+        /////////////////////////////////////////////////////////
         numJoin = rip.getNumJoins();
         long MINCOST = Long.MAX_VALUE;
         Operator finalPlan = null;
