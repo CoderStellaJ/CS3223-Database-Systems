@@ -11,10 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Properties;
+import java.util.*;
 
 public class RandomInitialPlan {
 
@@ -27,6 +24,7 @@ public class RandomInitialPlan {
     ArrayList<Attribute> groupbylist;
     int numJoin;            // Number of joins in this query
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
+    HashSet<String> tab_with_join = new HashSet<>();
     Operator root;          // Root of the query plan tree
     private static String propPath = "./src/resources/common.properties";
 
@@ -63,6 +61,7 @@ public class RandomInitialPlan {
         if (numJoin != 0) {
             createJoinOp();
         }
+        checkCartesian();
         createProjectOp();
         if (sqlquery.isDistinct()) {
             createSortRunOp();
@@ -162,6 +161,8 @@ public class RandomInitialPlan {
             Condition cn = (Condition) joinlist.get(jnnum);
             String lefttab = cn.getLhs().getTabName();
             String righttab = ((Attribute) cn.getRhs()).getTabName();
+            tab_with_join.add(lefttab);
+            tab_with_join.add(righttab);
             Operator left = (Operator) tab_op_hash.get(lefttab);
             Operator right = (Operator) tab_op_hash.get(righttab);
             jn = new Join(left, right, cn, OpType.JOIN);
@@ -219,6 +220,15 @@ public class RandomInitialPlan {
         Schema schema = base.getSchema();
         root = new Orderby(base, sqlquery.getOrderByList(), numBuffer);
         root.setSchema(schema);
+    }
+
+    private void checkCartesian() {
+        for (String table : tab_op_hash.keySet()) {
+            if (!tab_with_join.contains(table)) {
+                System.out.println("Client Error: Cartesian product is not allowed!!!");
+                System.exit(1);
+            }
+        }
     }
 
     private void modifyHashtable(Operator old, Operator newop) {
