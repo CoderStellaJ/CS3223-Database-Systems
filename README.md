@@ -28,6 +28,9 @@ You can change `joinMeth` to the type you implemented for debugging
 
 Note: edit the path in `src/resources/common.properties` to the directory containing the tables
 
+### Implementations
+Please refer to our report
+
 ### Experiments
 1. Define `.det` file
     - First line: number of columns
