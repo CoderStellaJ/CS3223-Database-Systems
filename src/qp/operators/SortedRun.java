@@ -20,7 +20,7 @@ public class SortedRun extends Operator {
     Batch outbatch;  // This is the current output buffer
     int start;       // Cursor position in the input buffer
     TupleComparator comparator;
-    List<LinkedList<Batch>> runs;
+    ArrayList<LinkedList<Batch>> runs;
 
     /**
      * constructor
@@ -123,8 +123,8 @@ public class SortedRun extends Operator {
         return newSR;
     }
 
-    public List createSortedRuns() {
-        List<LinkedList<Batch>> runs = new ArrayList<>();
+    public ArrayList createSortedRuns() {
+        ArrayList<LinkedList<Batch>> runs = new ArrayList<>();
 
         PriorityQueue<Tuple> pq = new PriorityQueue<>(comparator);
         while (!eos) {
@@ -147,19 +147,28 @@ public class SortedRun extends Operator {
                     outbatch = new Batch(batchsize);
                 }
             }
-            run.add(outbatch);
-            runs.add(run);
+            if (outbatch.size() > 0) {
+                run.add(outbatch);
+            }
+            if (run.size() >0) {
+                runs.add(run);
+            }
         }
 
         return runs;
     }
 
-    public List mergeSortedRuns(List<LinkedList<Batch>> runs) {
-        List<LinkedList<Batch>> newRuns = new ArrayList<>();
+    public ArrayList mergeSortedRuns(ArrayList<LinkedList<Batch>> runs) {
+        ArrayList<LinkedList<Batch>> newRuns = new ArrayList<>();
         int left = 0;
         int right = Math.min(numBuffer - 2, runs.size() - 1);
         while (left < runs.size()) {
-            LinkedList<Batch> run = mergeToOneRun(runs, left, right);
+            LinkedList<Batch> run = null;
+            if (left == right) {
+                run = runs.get(left);
+            } else {
+                run = mergeToOneRun(runs, left, right);
+            }
             newRuns.add(run);
             left = right + 1;
             right = Math.min(left + numBuffer - 2, runs.size() - 1);
@@ -176,7 +185,6 @@ public class SortedRun extends Operator {
         int smallestIndex = -1;
         Tuple smallestTuple = null;
         checkIndices(runs, left, right, indexes);
-        System.out.println(runs.size());
 
         while (!allPollOut(indexes)) {
 
@@ -248,7 +256,7 @@ public class SortedRun extends Operator {
     public int[] checkIndices(List<LinkedList<Batch>> runs, int left, int right, int[] indices) {
         for (int i = left; i <= right; i++) {
             if (runs.get(i).isEmpty() || runs.get(i).peekFirst() == null || runs.get(i).peekFirst().size() == 0) {
-                indices[i] = -1;
+                indices[i-left] = -1;
             }
         }
         return indices;
