@@ -86,7 +86,6 @@ public class SortedRun extends Operator {
 
         runs = createSortedRuns();
 
-        // TODO: Should stop when run.size() > numBuffer - 1, but it will be too complicated for next(), so do it later
         while (runs.size() > 1) {
             runs = mergeSortedRuns(runs);
         }
