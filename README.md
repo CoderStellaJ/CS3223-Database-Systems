@@ -26,7 +26,7 @@ set program arguments to `queryfilename resultfile pagesize numbuffer`
 4. `RandomInitialPlan.java createJoinOp()` generates a random number to select which join algorithm to use. 
 You can change `joinMeth` to the type you implemented for debugging
 
-Note: we specified our file path in `RandomDB.java`. Please change it when you pull from github.
+Note: edit the path in `src/resources/common.properties` to the directory containing the tables
 
 ### Experiments
 1. Define `.det` file
