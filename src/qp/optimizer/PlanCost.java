@@ -145,7 +145,7 @@ public class PlanCost {
 
         /** Calculate the cost of the operation **/
         int joinType = node.getJoinType();
-        long numbuff = BufferManager.getBuffersPerJoin();
+        long numbuff = BufferManager.numBuffer;
         long blockSize = numbuff - 2;
 
         long joincost;
@@ -296,6 +296,9 @@ public class PlanCost {
         Schema schema = node.getSchema();
         for (Attribute attr : schema.getAttList()) {
             numberDistinct *= ht.get(attr);
+            if (numberDistinct > intuples) {
+                break;
+            }
         }
         numberDistinct = Math.min(numberDistinct, intuples);
         long capacity = (long) Math.floor(Batch.getPageSize() / schema.getTupleSize());
@@ -343,14 +346,3 @@ public class PlanCost {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
